@@ -1,0 +1,226 @@
+/* ===== TEAMS SECTION ===== */
+.teams-section {
+  background: linear-gradient(135deg, #031c0e 0%, #08381c 100%);
+  padding: 100px 0;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Subtle dot overlay mapping the background pattern in the reference image */
+.teams-section::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(rgba(134, 224, 159, 0.07) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.teams-section .container {
+  position: relative;
+  z-index: 2;
+}
+
+.teams-section__title-container {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.teams-section__subtitle {
+  color: var(--green-300, #86efac);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.teams-section__title {
+  color: white;
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+/* 4 columns layout matching Enverga University's side-by-side card layout */
+.teams-section__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.team-card-enverga {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.team-card-enverga:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(134, 224, 159, 0.15);
+  border-color: rgba(134, 224, 159, 0.3);
+}
+
+/* Card Header - exact mapping from the reference image layout */
+.team-card-enverga__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-card-enverga__icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px solid #052e16; /* Deep green outline */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #052e16;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.team-card-enverga:hover .team-card-enverga__icon-wrapper {
+  background: #052e16;
+  color: white;
+  transform: scale(1.05);
+}
+
+.team-card-enverga__title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.team-card-enverga__title span {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #052e16; /* Deep green text matching motif */
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.team-card-enverga__title span.team-card-enverga__tagline {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #16a34a;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Card Content (Duties & Functions) */
+.team-card-enverga__divider {
+  height: 1.5px;
+  background: #f0fdf4; /* Very soft light green divider */
+  border: none;
+  margin: 0;
+}
+
+.team-card-enverga__content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+}
+
+.team-card-enverga__subgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-card-enverga__subgroup-title {
+  font-family: var(--font-heading);
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #15803d; /* Soft dark green */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-card-enverga__subgroup-title svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.team-card-enverga__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-card-enverga__list li {
+  font-size: 0.8rem;
+  color: var(--gray-600, #4b5563);
+  line-height: 1.45;
+  position: relative;
+  padding-left: 12px;
+}
+
+.team-card-enverga__list li::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  position: absolute;
+  left: 0;
+  top: 7px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .teams-section__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .teams-section {
+    padding: 70px 0;
+  }
+  
+  .teams-section__title-container {
+    margin-bottom: 40px;
+  }
+  
+  .teams-section__title {
+    font-size: 1.8rem;
+  }
+  
+  .teams-section__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .team-card-enverga {
+    padding: 24px;
+  }
+}

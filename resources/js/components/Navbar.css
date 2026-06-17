@@ -1,0 +1,225 @@
+/* ===== NAVBAR ===== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 18px 0;
+  transition: all 0.4s ease;
+  background: transparent;
+}
+
+.navbar--scrolled {
+  background: rgba(10, 46, 26, 0.97);
+  backdrop-filter: blur(12px);
+  padding: 12px 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Brand */
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.navbar__logos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.navbar__logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.navbar__logo-fallback {
+  display: flex;
+  gap: 4px;
+}
+
+.navbar__logo-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border: 2px solid rgba(255,255,255,0.4);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.jpcs-c {
+  background: var(--green-600);
+  color: white;
+}
+.olsh-c {
+  background: white;
+  color: var(--green-700);
+}
+
+.navbar__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.navbar__brand-name {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.01em;
+}
+
+.navbar__brand-sub {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+}
+
+/* Links */
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navbar__link {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  position: relative;
+}
+
+.navbar__link::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: var(--green-300);
+  border-radius: 2px;
+  transition: transform 0.3s ease;
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: white;
+}
+
+.navbar__link:hover::after,
+.navbar__link--active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.navbar__cta {
+  margin-left: 8px;
+  padding: 10px 24px !important;
+  font-size: 0.85rem !important;
+}
+
+/* Hamburger */
+.navbar__hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+
+.navbar__hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: var(--transition);
+  transform-origin: center;
+}
+
+.navbar__hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(3px, 4px); }
+.navbar__hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.navbar__hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(3px, -4px); }
+
+/* Drawer — hidden by default, opened via JS class */
+.navbar__drawer {
+  display: none;
+  flex-direction: column;
+  padding: 0 20px;
+  background: rgba(10, 46, 26, 0.98);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s ease, padding 0.35s ease;
+}
+
+.navbar__drawer--open {
+  max-height: 500px;
+  padding: 12px 20px 20px;
+}
+
+.navbar__drawer-link {
+  color: rgba(255,255,255,0.85);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  transition: color 0.2s;
+  text-decoration: none;
+}
+
+.navbar__drawer-link:last-of-type {
+  border-bottom: none;
+}
+
+.navbar__drawer-link:hover {
+  color: var(--green-300);
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  /* Always show a solid dark bar on mobile so drawer looks connected */
+  .navbar {
+    background: rgba(10, 46, 26, 0.97);
+    backdrop-filter: blur(12px);
+    padding: 12px 0;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+  }
+
+  .navbar__links { display: none; }
+  .navbar__hamburger { display: flex; }
+  .navbar__drawer { display: flex; }
+
+  .navbar__brand-name { font-size: 1rem; }
+  .navbar__brand-sub  { display: none; }
+}
+

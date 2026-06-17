@@ -1,0 +1,168 @@
+/* =============================================
+   JPCS-OLSHCo Landing Page — Global Styles
+   Green & White Motif
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --green-900: #0a2e1a;
+  --green-800: #0d3d22;
+  --green-700: #145228;
+  --green-600: #1a6b31;
+  --green-500: #22843b;
+  --green-400: #2ea84f;
+  --green-300: #4dc96b;
+  --green-200: #86e09f;
+  --green-100: #c3f0ce;
+  --green-50:  #eafaf0;
+  --white:     #ffffff;
+  --gray-50:   #f8fafc;
+  --gray-100:  #f1f5f9;
+  --gray-200:  #e2e8f0;
+  --gray-400:  #94a3b8;
+  --gray-600:  #475569;
+  --gray-800:  #1e293b;
+  --gold:      #f4c430;
+  --font-heading: 'Poppins', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.12);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.15);
+  --shadow-lg:  0 10px 40px rgba(0,0,0,0.2);
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-xl:  32px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--white);
+  color: var(--gray-800);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+a  { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+/* ---- Utility ---- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-50);
+  color: var(--green-600);
+  border: 1px solid var(--green-200);
+  padding: 6px 16px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: var(--green-900);
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  color: var(--gray-600);
+  font-size: 1.05rem;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--green-500), var(--green-700));
+  color: var(--white);
+  padding: 14px 32px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 4px 20px rgba(34, 132, 59, 0.4);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(34, 132, 59, 0.5);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--green-600);
+  padding: 13px 30px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 2px solid var(--green-400);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-outline:hover {
+  background: var(--green-50);
+  border-color: var(--green-600);
+  transform: translateY(-2px);
+}
+
+/* High-priority override to center and size public chapter officers */
+.about__officers-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+.about__officer-card {
+  flex: 1 1 260px !important;
+  max-width: 320px !important;
+  padding: 40px 24px !important;
+  gap: 16px !important;
+}
+
+.about__officer-avatar {
+  width: 120px !important;
+  height: 120px !important;
+  font-size: 2.5rem !important;
+}
+
+.about__officer-role {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+}
+
+.about__officer-desc {
+  font-size: 0.88rem !important;
+}
