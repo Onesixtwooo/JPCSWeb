@@ -24,6 +24,7 @@ export default function CareerPage() {
   const [expandedCard, setExpandedCard] = useState(null);
   const [currentAlumniPage, setCurrentAlumniPage] = useState(1);
   const [shareLink, setShareLink] = useState('/#contact');
+  const [copiedAlumnus, setCopiedAlumnus] = useState(null);
 
   const alumniPerPage = 9;
   const indexOfLastAlumnus = currentAlumniPage * alumniPerPage;
@@ -53,6 +54,87 @@ export default function CareerPage() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (loading || alumni.length === 0) return;
+    
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#alumni-')) {
+      const slug = hash.replace('#alumni-', '');
+      const index = alumni.findIndex(a => 
+        encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-')) === slug
+      );
+      if (index !== -1) {
+        const page = Math.floor(index / alumniPerPage) + 1;
+        setCurrentAlumniPage(page);
+        
+        setTimeout(() => {
+          const cardId = `alumni-card-${slug}`;
+          const element = document.getElementById(cardId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('alumni-card--highlight');
+            setTimeout(() => {
+              element.classList.remove('alumni-card--highlight');
+            }, 2000);
+          }
+        }, 400);
+      }
+    }
+  }, [loading, alumni]);
+
+  const handleShare = (alumnus) => {
+    const slug = encodeURIComponent(alumnus.name.toLowerCase().replace(/\s+/g, '-'));
+    const shareUrl = `${window.location.origin}${window.location.pathname}#alumni-${slug}`;
+    
+    const shareData = {
+      title: `${alumnus.name}'s Success Story - JPCS Career Board`,
+      text: `Read about ${alumnus.name}, ${alumnus.role} at ${alumnus.company} on the JPCS Alumni Board.`,
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData)
+        .catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error('Error sharing:', err);
+          }
+        });
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl)
+          .then(() => {
+            setCopiedAlumnus(alumnus.name);
+            setTimeout(() => setCopiedAlumnus(null), 2000);
+          })
+          .catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          setCopiedAlumnus(alumnus.name);
+          setTimeout(() => setCopiedAlumnus(null), 2000);
+        } catch (err) {
+          console.error('Fallback copy failed: ', err);
+        }
+        document.body.removeChild(textArea);
+      }
+    }
+  };
+
+  const handleFbShare = (alumnus) => {
+    const slug = encodeURIComponent(alumnus.name.toLowerCase().replace(/\s+/g, '-'));
+    const shareUrl = `${window.location.origin}${window.location.pathname}#alumni-${slug}`;
+    const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    window.open(fbShareUrl, '_blank', 'noopener,noreferrer,width=600,height=400');
+  };
+
+
 
   const filtered = activeFilter === 'All'
     ? careers
@@ -234,7 +316,51 @@ export default function CareerPage() {
             {alumni.slice(indexOfFirstAlumnus, indexOfLastAlumnus).map((a, i) => {
               if (a.image) {
                 return (
-                  <div key={a.name} className="alumni-card alumni-card--photo" style={{ '--alumni-color': a.color }}>
+                  <div 
+                    id={`alumni-card-${encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-'))}`}
+                    key={a.name} 
+                    className="alumni-card alumni-card--photo" 
+                    style={{ '--alumni-color': a.color }}
+                  >
+                    <div className="alumni-card__actions">
+                      <button 
+                        className="alumni-card__action-btn alumni-card__fb-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFbShare(a);
+                        }}
+                        aria-label={`Share ${a.name}'s story on Facebook`}
+                        title="Share on Facebook"
+                      >
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+                        </svg>
+                      </button>
+                      <button 
+                        className={`alumni-card__action-btn alumni-card__share-btn ${copiedAlumnus === a.name ? 'alumni-card__share-btn--copied' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShare(a);
+                        }}
+                        aria-label={`Share ${a.name}'s testimonial`}
+                        title="Copy link"
+                      >
+                        {copiedAlumnus === a.name ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                            <polyline points="16 6 12 2 8 6" />
+                            <line x1="12" y1="2" x2="12" y2="15" />
+                          </svg>
+                        )}
+                        {copiedAlumnus === a.name && (
+                          <span className="alumni-card__share-btn-tooltip">Copied!</span>
+                        )}
+                      </button>
+                    </div>
                     <div className="alumni-card__photo-wrapper">
                       <img src={a.image} alt={a.name} className="alumni-card__photo" />
                     </div>
@@ -256,7 +382,51 @@ export default function CareerPage() {
               }
 
               return (
-                <div key={a.name} className="alumni-card" style={{ '--alumni-color': a.color }}>
+                <div 
+                  id={`alumni-card-${encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-'))}`}
+                  key={a.name} 
+                  className="alumni-card" 
+                  style={{ '--alumni-color': a.color }}
+                >
+                  <div className="alumni-card__actions">
+                    <button 
+                      className="alumni-card__action-btn alumni-card__fb-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFbShare(a);
+                      }}
+                      aria-label={`Share ${a.name}'s story on Facebook`}
+                      title="Share on Facebook"
+                    >
+                      <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+                      </svg>
+                    </button>
+                    <button 
+                      className={`alumni-card__action-btn alumni-card__share-btn ${copiedAlumnus === a.name ? 'alumni-card__share-btn--copied' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(a);
+                      }}
+                      aria-label={`Share ${a.name}'s testimonial`}
+                      title="Copy link"
+                    >
+                      {copiedAlumnus === a.name ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                          <polyline points="16 6 12 2 8 6" />
+                          <line x1="12" y1="2" x2="12" y2="15" />
+                        </svg>
+                      )}
+                      {copiedAlumnus === a.name && (
+                        <span className="alumni-card__share-btn-tooltip">Copied!</span>
+                      )}
+                    </button>
+                  </div>
                   <div className="alumni-card__quote-mark">"</div>
                   <p className="alumni-card__quote">{a.quote}</p>
                   <div className="alumni-card__footer">
