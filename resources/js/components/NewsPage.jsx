@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CustomCursor from './CustomCursor';
 import './NewsPage.css';
 
 const CAT_COLORS = {
@@ -53,6 +54,7 @@ export default function NewsPage() {
 
   return (
     <div className="newspage">
+      <CustomCursor />
       {/* Navigation Bar */}
       <nav className="newspage__nav">
         <div className="newspage__nav-inner container">

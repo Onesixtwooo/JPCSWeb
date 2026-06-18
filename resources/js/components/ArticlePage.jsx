@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CustomCursor from './CustomCursor';
 import './ArticlePage.css';
 
 const CAT_COLORS = {
@@ -67,6 +68,7 @@ export default function ArticlePage({ articleId }) {
   if (error || !article) {
     return (
       <div className="article-page article-page--error">
+        <CustomCursor />
         {/* Navigation Bar */}
         <nav className="article-page__nav">
           <div className="article-page__nav-inner container">
@@ -108,6 +110,7 @@ export default function ArticlePage({ articleId }) {
 
   return (
     <div className="article-page">
+      <CustomCursor />
       {/* Navigation Bar */}
       <nav className="article-page__nav">
         <div className="article-page__nav-inner container">
