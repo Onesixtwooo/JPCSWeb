@@ -54,6 +54,7 @@
   background: linear-gradient(145deg, var(--green-900), #1a5e30);
   border-radius: var(--radius-xl);
   padding: 48px 44px;
+  padding-top: 80px; /* reserve space above for the absolute badge */
   color: white;
   position: relative;
   overflow: hidden;
@@ -94,6 +95,7 @@
   padding: 5px 14px;
   border-radius: 99px;
   letter-spacing: 0.04em;
+  z-index: 2;
 }
 
 .news-featured__meta {
@@ -308,5 +310,36 @@
   0% { transform: scale(1); }
   50% { transform: scale(1.06); }
   100% { transform: scale(1); }
+}
+
+.news__more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 48px;
+}
+
+.news__see-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--green-800);
+  border: 2px solid var(--green-800);
+  padding: 12px 28px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-body);
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(34, 132, 59, 0.08);
+}
+
+.news__see-more-btn:hover {
+  background: var(--green-800);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 132, 59, 0.25);
 }
 

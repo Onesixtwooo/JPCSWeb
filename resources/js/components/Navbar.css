@@ -22,6 +22,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  flex-wrap: nowrap;
 }
 
 /* Brand */
@@ -169,22 +170,28 @@
 .navbar__hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .navbar__hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(3px, -4px); }
 
-/* Drawer — hidden by default, opened via JS class */
+/* Drawer — hidden by default, shown only on mobile inside the flex-column navbar */
 .navbar__drawer {
   display: none;
   flex-direction: column;
-  padding: 0 20px;
+  padding: 0;
   background: rgba(10, 46, 26, 0.98);
   backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255,255,255,0.08);
+  /* NO border when closed — border only shows when open */
   overflow: hidden;
   max-height: 0;
-  transition: max-height 0.35s ease, padding 0.35s ease;
+  visibility: hidden;
+  pointer-events: none;
+  transition: max-height 0.4s ease, padding 0.4s ease, visibility 0s linear 0.4s;
 }
 
 .navbar__drawer--open {
-  max-height: 500px;
+  max-height: 600px;
   padding: 12px 20px 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  visibility: visible;
+  pointer-events: auto;
+  transition: max-height 0.4s ease, padding 0.4s ease, visibility 0s linear 0s;
 }
 
 .navbar__drawer-link {
@@ -207,19 +214,38 @@
 
 /* Mobile */
 @media (max-width: 900px) {
-  /* Always show a solid dark bar on mobile so drawer looks connected */
+  /* Navbar becomes a flex column so the drawer flows below the bar inside the fixed element */
   .navbar {
-    background: rgba(10, 46, 26, 0.97);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: rgba(10, 46, 26, 0.97) !important;
     backdrop-filter: blur(12px);
-    padding: 12px 0;
+    padding: 0;
     box-shadow: 0 2px 16px rgba(0,0,0,0.35);
   }
 
-  .navbar__links { display: none; }
+  .navbar__inner {
+    width: 100%;
+    padding: 12px 16px;
+    box-sizing: border-box;
+  }
+
+  /* Completely hide desktop links on mobile */
+  .navbar__links {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
   .navbar__hamburger { display: flex; }
-  .navbar__drawer { display: flex; }
+
+  /* Drawer lives inside the fixed navbar column — no page overlap */
+  .navbar__drawer {
+    display: flex;
+    width: 100%;
+  }
 
   .navbar__brand-name { font-size: 1rem; }
   .navbar__brand-sub  { display: none; }
 }
-

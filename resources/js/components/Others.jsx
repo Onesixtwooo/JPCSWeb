@@ -4,10 +4,9 @@ import CanvasLines from './CanvasLines';
 import './Others.css';
 
 const RESOURCES = [
-  { icon: '📁', title: 'Member Resources', desc: 'Access templates, study materials, past projects, and exclusive learning resources curated for JPCS members.', link: '#' },
-  { icon: '🌐', title: 'JPCS National Portal', desc: 'Stay connected with the national JPCS organization and access nationwide programs, scholarships, and competitions.', link: '#' },
-  { icon: '💼', title: 'Career Board', desc: 'Explore internship and job opportunities shared exclusively for JPCS-OLSHCo members from our industry partners.', link: '#' },
-  { icon: '📸', title: 'Gallery', desc: 'Browse photos and highlights from past events, workshops, competitions, and milestone celebrations.', link: '#' },
+  { icon: '📁', title: 'Member Resources', desc: 'Access templates, study materials, past projects, and exclusive learning resources curated for JPCS members.', link: '/resources', external: false },
+  { icon: '🌐', title: 'JPCS National Portal', desc: 'Stay connected with the national JPCS organization and access nationwide programs, scholarships, and competitions.', link: 'https://philippinecomputersociety.org/jpcs-2/', external: true },
+  { icon: '💼', title: 'Career Board', desc: 'Explore internship and job opportunities shared exclusively for JPCS-OLSHCo members from our industry partners.', link: '/career', external: false },
 ];
 
 const FAQS = [
@@ -73,7 +72,12 @@ export default function Others() {
           </div>
           <div className="others__resource-grid">
             {RESOURCES.map(r => (
-              <a key={r.title} href={r.link} className="resource-card">
+              <a
+                key={r.title}
+                href={r.link}
+                className="resource-card"
+                {...(r.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
                 <div className="resource-card__icon">{r.icon}</div>
                 <div className="resource-card__body">
                   <h4 className="resource-card__title">{r.title}</h4>

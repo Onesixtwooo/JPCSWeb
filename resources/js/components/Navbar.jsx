@@ -15,11 +15,19 @@ export default function Navbar({ brandName, brandSubtext, brandLogo }) {
   const [active,   setActive]       = useState('');
   const [menuOpen, setMenuOpen]     = useState(false);
   const [imgError, setImgError]     = useState(false);
+  const [isMobile, setIsMobile]     = useState(window.innerWidth <= 900);
   const navRef                      = useRef(null);
 
   useEffect(() => {
     setImgError(false);
   }, [brandLogo]);
+
+  // Track mobile breakpoint
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -47,6 +55,11 @@ export default function Navbar({ brandName, brandSubtext, brandLogo }) {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
+
+  // Close drawer when resizing back to desktop
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
 
   const handleNav = (href) => {
     setActive(href);
@@ -78,27 +91,31 @@ export default function Navbar({ brandName, brandSubtext, brandLogo }) {
           </div>
         </div>
 
-        {/* Desktop nav */}
-        <nav className="navbar__links">
-          {NAV_LINKS.map(l => (
-            <a
-              key={l.href}
-              href={l.href}
-              className={`navbar__link ${active === l.href ? 'navbar__link--active' : ''}`}
-              onClick={e => { e.preventDefault(); handleNav(l.href); }}
-            >
-              {l.label}
+        {/* Desktop nav — only rendered in the DOM on desktop */}
+        {!isMobile && (
+          <nav className="navbar__links">
+            {NAV_LINKS.map(l => (
+              <a
+                key={l.href}
+                href={l.href}
+                className={`navbar__link ${active === l.href ? 'navbar__link--active' : ''}`}
+                onClick={e => { e.preventDefault(); handleNav(l.href); }}
+              >
+                {l.label}
+              </a>
+            ))}
+            <a href="#contact" className="btn-primary navbar__cta" onClick={e => { e.preventDefault(); handleNav('#contact'); }}>
+              Join Us
             </a>
-          ))}
-          <a href="#contact" className="btn-primary navbar__cta" onClick={e => { e.preventDefault(); handleNav('#contact'); }}>
-            Join Us
-          </a>
-        </nav>
+          </nav>
+        )}
 
-        {/* Hamburger */}
-        <button className={`navbar__hamburger ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(p => !p)} aria-label="Toggle menu">
-          <span /><span /><span />
-        </button>
+        {/* Hamburger — only on mobile */}
+        {isMobile && (
+          <button className={`navbar__hamburger ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(p => !p)} aria-label="Toggle menu">
+            <span /><span /><span />
+          </button>
+        )}
       </div>
 
       {/* Mobile drawer */}

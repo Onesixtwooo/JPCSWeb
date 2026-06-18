@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CustomCursor from './CustomCursor';
 import './AboutPage.css';
 
 export default function AboutPage() {
@@ -47,6 +48,7 @@ export default function AboutPage() {
 
   return (
     <div className="aboutpage">
+      <CustomCursor />
       {/* Navigation Bar */}
       <nav className="aboutpage__nav">
         <div className="aboutpage__nav-inner container">

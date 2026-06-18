@@ -458,10 +458,17 @@ class AdminController extends Controller
             }
         }
 
-        // Try finding by slugified title
+        // Custom slugify matching the JS frontend slugify() exactly:
+        // toLowerCase → replace [^a-z0-9]+ with '-' → trim leading/trailing '-'
+        $slugify = function (string $text): string {
+            $text = mb_strtolower($text, 'UTF-8');
+            $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+            return trim($text, '-');
+        };
+
         $newsItems = NewsItem::all();
         foreach ($newsItems as $item) {
-            if (\Illuminate\Support\Str::slug($item->title) === $id) {
+            if ($slugify($item->title) === $id) {
                 return response()->json($item);
             }
         }
@@ -677,5 +684,192 @@ class AdminController extends Controller
     {
         Faq::findOrFail($id)->delete();
         return response()->json(['success' => true]);
+    }
+
+    // 10. Student Resources CRUD
+    public function getStudentResources()
+    {
+        return response()->json(\App\Models\StudentResource::orderBy('order', 'asc')->get());
+    }
+
+    public function createStudentResource(Request $request)
+    {
+        $data = $request->validate([
+            'category' => 'required|string',
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'date_modified' => 'required|string',
+            'download_link_1' => 'required|string',
+            'download_link_2' => 'nullable|string',
+            'order' => 'required|integer',
+        ]);
+        $sr = \App\Models\StudentResource::create($data);
+        return response()->json(['success' => true, 'resource' => $sr]);
+    }
+
+    public function updateStudentResource(Request $request, $id)
+    {
+        $sr = \App\Models\StudentResource::findOrFail($id);
+        $data = $request->validate([
+            'category' => 'required|string',
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'date_modified' => 'required|string',
+            'download_link_1' => 'required|string',
+            'download_link_2' => 'nullable|string',
+            'order' => 'required|integer',
+        ]);
+        $sr->update($data);
+        return response()->json(['success' => true, 'resource' => $sr]);
+    }
+
+    public function deleteStudentResource($id)
+    {
+        \App\Models\StudentResource::findOrFail($id)->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // 11. Career Paths CRUD
+    public function getCareerPaths()
+    {
+        return response()->json(\App\Models\CareerPath::orderBy('order', 'asc')->get());
+    }
+
+    public function createCareerPath(Request $request)
+    {
+        $data = $request->validate([
+            'icon' => 'required|string',
+            'title' => 'required|string',
+            'tags' => 'required|array',
+            'desc' => 'required|string',
+            'skills' => 'required|array',
+            'outlook' => 'required|string',
+            'salary' => 'required|string',
+            'color' => 'required|string',
+            'order' => 'required|integer',
+        ]);
+        $cp = \App\Models\CareerPath::create($data);
+        return response()->json(['success' => true, 'career_path' => $cp]);
+    }
+
+    public function updateCareerPath(Request $request, $id)
+    {
+        $cp = \App\Models\CareerPath::findOrFail($id);
+        $data = $request->validate([
+            'icon' => 'required|string',
+            'title' => 'required|string',
+            'tags' => 'required|array',
+            'desc' => 'required|string',
+            'skills' => 'required|array',
+            'outlook' => 'required|string',
+            'salary' => 'required|string',
+            'color' => 'required|string',
+            'order' => 'required|integer',
+        ]);
+        $cp->update($data);
+        return response()->json(['success' => true, 'career_path' => $cp]);
+    }
+
+    public function deleteCareerPath($id)
+    {
+        \App\Models\CareerPath::findOrFail($id)->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // 12. Alumni Testimonials CRUD
+    public function uploadAlumniAvatar(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = 'alumni_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            if (!file_exists(public_path('images/alumni'))) {
+                mkdir(public_path('images/alumni'), 0755, true);
+            }
+            $file->move(public_path('images/alumni'), $filename);
+
+            return response()->json([
+                'success' => true,
+                'path' => '/images/alumni/' . $filename
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No file uploaded.'], 400);
+    }
+
+    public function getAlumniTestimonials()
+    {
+        return response()->json(\App\Models\AlumniTestimonial::orderBy('order', 'asc')->get());
+    }
+
+    public function createAlumniTestimonial(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'role' => 'required|string',
+            'company' => 'required|string',
+            'year' => 'required|string',
+            'quote' => 'required|string',
+            'avatar' => 'nullable|string',
+            'image' => 'nullable|string',
+            'color' => 'required|string',
+            'order' => 'required|integer',
+        ]);
+        $at = \App\Models\AlumniTestimonial::create($data);
+        return response()->json(['success' => true, 'alumni_testimonial' => $at]);
+    }
+
+    public function updateAlumniTestimonial(Request $request, $id)
+    {
+        $at = \App\Models\AlumniTestimonial::findOrFail($id);
+        $data = $request->validate([
+            'name' => 'required|string',
+            'role' => 'required|string',
+            'company' => 'required|string',
+            'year' => 'required|string',
+            'quote' => 'required|string',
+            'avatar' => 'nullable|string',
+            'image' => 'nullable|string',
+            'color' => 'required|string',
+            'order' => 'required|integer',
+        ]);
+        $at->update($data);
+        return response()->json(['success' => true, 'alumni_testimonial' => $at]);
+    }
+
+    public function deleteAlumniTestimonial($id)
+    {
+        \App\Models\AlumniTestimonial::findOrFail($id)->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function getAlumniShareLink()
+    {
+        $setting = \App\Models\Setting::where('key', 'alumni_share_story_link')->first();
+        return response()->json([
+            'link' => $setting ? $setting->value : '/#contact'
+        ]);
+    }
+
+    public function updateAlumniShareLink(Request $request)
+    {
+        $request->validate([
+            'link' => 'nullable|string',
+        ]);
+        
+        $link = $request->input('link', '/#contact');
+        if (empty($link)) {
+            $link = '/#contact';
+        }
+
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'alumni_share_story_link'],
+            ['value' => $link]
+        );
+
+        return response()->json(['success' => true, 'link' => $link]);
     }
 }

@@ -95,6 +95,7 @@ export default function News() {
   const rest = hasNews
     ? newsList.filter(n => n.id !== featured.id)
     : [];
+  const visibleRest = rest.slice(0, 3);
 
   return (
     <section id="news" className="news">
@@ -122,56 +123,67 @@ export default function News() {
             <p className="news__empty-text">No news articles for now, stay updated on our official channels</p>
           </div>
         ) : (
-          /* Featured + sidebar */
-          <div className="news__layout">
-            {/* Featured article */}
-            {featured && (
-              <article className="news-featured">
-                <div className="news-featured__badge">{featured.emoji} Featured</div>
-                <div className="news-featured__meta">
-                  <span className="news-cat">{featured.category}</span>
-                  <span className="news-date">{featured.date}</span>
-                  <span className="news-read">{featured.readTime}</span>
-                </div>
-                <h2 className="news-featured__title">
-                  <a href={`/news/${slugify(featured.title)}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                    {featured.title}
-                  </a>
-                </h2>
-                <p className="news-featured__excerpt">{featured.excerpt}</p>
-                <a href={`/news/${slugify(featured.title)}`} className="news-featured__btn">
-                  Read Full Article
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-              </article>
-            )}
-
-            {/* Sidebar articles */}
-            <div className="news__sidebar">
-              {rest.map(n => (
-                <article 
-                  key={n.id} 
-                  className="news-card"
-                  onClick={() => window.location.href = `/news/${slugify(n.title)}`}
-                >
-                  <div className="news-card__emoji">{n.emoji}</div>
-                  <div className="news-card__content">
-                    <div className="news-card__meta">
-                      <span className="news-cat" style={CAT_COLORS[n.category]}>{n.category}</span>
-                      <span className="news-date">{n.date}</span>
-                    </div>
-                    <h3 className="news-card__title">
-                      <a href={`/news/${slugify(n.title)}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                        {n.title}
-                      </a>
-                    </h3>
-                    <p className="news-card__excerpt">{n.excerpt}</p>
-                    <a href={`/news/${slugify(n.title)}`} className="news-card__link">Read more →</a>
+          <>
+            {/* Featured + sidebar */}
+            <div className="news__layout">
+              {/* Featured article */}
+              {featured && (
+                <article className="news-featured">
+                  <div className="news-featured__badge">{featured.emoji} Featured</div>
+                  <div className="news-featured__meta">
+                    <span className="news-cat">{featured.category}</span>
+                    <span className="news-date">{featured.date}</span>
+                    <span className="news-read">{featured.readTime}</span>
                   </div>
+                  <h2 className="news-featured__title">
+                    <a href={`/news/${slugify(featured.title)}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                      {featured.title}
+                    </a>
+                  </h2>
+                  <p className="news-featured__excerpt">{featured.excerpt}</p>
+                  <a href={`/news/${slugify(featured.title)}`} className="news-featured__btn">
+                    Read Full Article
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </a>
                 </article>
-              ))}
+              )}
+
+              {/* Sidebar articles */}
+              <div className="news__sidebar">
+                {visibleRest.map(n => (
+                  <article 
+                    key={n.id} 
+                    className="news-card"
+                    onClick={() => window.location.href = `/news/${slugify(n.title)}`}
+                  >
+                    <div className="news-card__emoji">{n.emoji}</div>
+                    <div className="news-card__content">
+                      <div className="news-card__meta">
+                        <span className="news-cat" style={CAT_COLORS[n.category]}>{n.category}</span>
+                        <span className="news-date">{n.date}</span>
+                      </div>
+                      <h3 className="news-card__title">
+                        <a href={`/news/${slugify(n.title)}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          {n.title}
+                        </a>
+                      </h3>
+                      <p className="news-card__excerpt">{n.excerpt}</p>
+                      <a href={`/news/${slugify(n.title)}`} className="news-card__link">Read more →</a>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
-          </div>
+
+            {newsList.length > 4 && (
+              <div className="news__more-container">
+                <a href="/news" className="news__see-more-btn">
+                  See More Updates
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

@@ -7,6 +7,8 @@ import NewsPage from './components/NewsPage';
 import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
 import ArticlePage from './components/ArticlePage';
+import CareerPage from './components/CareerPage';
+import MemberResourcesPage from './components/MemberResourcesPage';
 
 const el = document.getElementById('app');
 if (el) {
@@ -16,6 +18,8 @@ if (el) {
   const isAbout = path === '/about';
   const isNews = path === '/news';
   const isNewsDetail = path.startsWith('/news/') && path.split('/')[2];
+  const isCareer = path === '/career';
+  const isResources = path === '/resources';
 
   if (isLogin) {
     createRoot(el).render(<Login />);
@@ -28,6 +32,10 @@ if (el) {
   } else if (isNewsDetail) {
     const articleId = path.split('/')[2];
     createRoot(el).render(<ArticlePage articleId={articleId} />);
+  } else if (isCareer) {
+    createRoot(el).render(<CareerPage />);
+  } else if (isResources) {
+    createRoot(el).render(<MemberResourcesPage />);
   } else {
     createRoot(el).render(<LandingPage />);
   }

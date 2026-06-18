@@ -116,6 +116,9 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState([]);
   const [news, setNews] = useState([]);
   const [faqs, setFaqs] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [careerPaths, setCareerPaths] = useState([]);
+  const [alumniTestimonials, setAlumniTestimonials] = useState([]);
   const [eventsSettings, setEventsSettings] = useState({
     events_title: '',
     events_description: ''
@@ -141,6 +144,23 @@ export default function AdminDashboard() {
     hero_tagline: '',
     hero_motto: ''
   });
+
+  const [newsSearch, setNewsSearch] = useState('');
+  const [newsSort, setNewsSort] = useState('date-desc');
+
+  const [eventsSearch, setEventsSearch] = useState('');
+  const [eventsSort, setEventsSort] = useState('date-desc');
+
+  const [officersSearch, setOfficersSearch] = useState('');
+
+  const [resourcesSearch, setResourcesSearch] = useState('');
+
+  const [careersSearch, setCareersSearch] = useState('');
+  const [careersSort, setCareersSort] = useState('order-asc');
+
+  const [alumniSearch, setAlumniSearch] = useState('');
+  const [alumniSort, setAlumniSort] = useState('order-asc');
+  const [alumniShareLink, setAlumniShareLink] = useState('/#contact');
 
   // Modal / Form Edit States
   const [editItem, setEditItem] = useState(null); // holds item being edited
@@ -184,6 +204,13 @@ export default function AdminDashboard() {
       axios.get('/api/events-settings').then(res => setEventsSettings(res.data));
     } else if (activeTab === 'news') {
       axios.get('/api/news').then(res => setNews(res.data));
+    } else if (activeTab === 'resources') {
+      axios.get('/api/student-resources').then(res => setResources(res.data));
+    } else if (activeTab === 'careers') {
+      axios.get('/api/career-paths').then(res => setCareerPaths(res.data));
+    } else if (activeTab === 'alumni') {
+      axios.get('/api/alumni-testimonials').then(res => setAlumniTestimonials(res.data));
+      axios.get('/api/alumni-share-link').then(res => setAlumniShareLink(res.data.link));
     }
   }, [isAuthenticated, activeTab]);
 
@@ -199,6 +226,150 @@ export default function AdminDashboard() {
   const flashSuccess = (msg) => {
     setSuccess(msg);
     setTimeout(() => setSuccess(''), 4000);
+  };
+
+  const getFilteredNews = () => {
+    let result = [...news];
+
+    // 1. Search Filter
+    if (newsSearch.trim() !== '') {
+      const q = newsSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.excerpt && item.excerpt.toLowerCase().includes(q)) ||
+        (item.content && item.content.toLowerCase().includes(q))
+      );
+    }
+
+    // 2. Sorting
+    result.sort((a, b) => {
+      if (newsSort === 'date-desc') {
+        return new Date(b.created_at || b.date) - new Date(a.created_at || a.date);
+      }
+      if (newsSort === 'date-asc') {
+        return new Date(a.created_at || a.date) - new Date(b.created_at || b.date);
+      }
+      if (newsSort === 'title-asc') {
+        return (a.title || '').localeCompare(b.title || '');
+      }
+      if (newsSort === 'title-desc') {
+        return (b.title || '').localeCompare(a.title || '');
+      }
+      if (newsSort === 'featured-first') {
+        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      }
+      return 0;
+    });
+
+    return result;
+  };
+
+  const getFilteredEvents = () => {
+    let result = [...events];
+
+    // 1. Search Filter
+    if (eventsSearch.trim() !== '') {
+      const q = eventsSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.venue && item.venue.toLowerCase().includes(q)) ||
+        (item.desc && item.desc.toLowerCase().includes(q))
+      );
+    }
+
+    // 2. Sorting
+    result.sort((a, b) => {
+      if (eventsSort === 'date-desc') {
+        return new Date(b.created_at || b.date) - new Date(a.created_at || a.date);
+      }
+      if (eventsSort === 'date-asc') {
+        return new Date(a.created_at || a.date) - new Date(b.created_at || b.date);
+      }
+      if (eventsSort === 'title-asc') {
+        return (a.title || '').localeCompare(b.title || '');
+      }
+      if (eventsSort === 'title-desc') {
+        return (b.title || '').localeCompare(a.title || '');
+      }
+      return 0;
+    });
+
+    return result;
+  };
+
+  const getFilteredOfficers = () => {
+    let result = [...officers];
+    if (officersSearch.trim() !== '') {
+      const q = officersSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.officer_name && item.officer_name.toLowerCase().includes(q)) ||
+        (item.year_level && item.year_level.toLowerCase().includes(q)) ||
+        (item.motto && item.motto.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  };
+
+  const getFilteredResources = () => {
+    let result = [...resources];
+    if (resourcesSearch.trim() !== '') {
+      const q = resourcesSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  };
+
+  const getFilteredCareers = () => {
+    let result = [...careerPaths];
+    if (careersSearch.trim() !== '') {
+      const q = careersSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.outlook && item.outlook.toLowerCase().includes(q)) ||
+        (item.salary && item.salary.toLowerCase().includes(q)) ||
+        (item.desc && item.desc.toLowerCase().includes(q)) ||
+        (Array.isArray(item.tags) && item.tags.some(t => t.toLowerCase().includes(q))) ||
+        (Array.isArray(item.skills) && item.skills.some(s => s.toLowerCase().includes(q)))
+      );
+    }
+    result.sort((a, b) => {
+      if (careersSort === 'order-asc') return (a.order || 0) - (b.order || 0);
+      if (careersSort === 'order-desc') return (b.order || 0) - (a.order || 0);
+      if (careersSort === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+      if (careersSort === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+      return 0;
+    });
+    return result;
+  };
+
+  const getFilteredAlumni = () => {
+    let result = [...alumniTestimonials];
+    if (alumniSearch.trim() !== '') {
+      const q = alumniSearch.toLowerCase();
+      result = result.filter(item => 
+        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.role && item.role.toLowerCase().includes(q)) ||
+        (item.company && item.company.toLowerCase().includes(q)) ||
+        (item.year && item.year.toLowerCase().includes(q)) ||
+        (item.quote && item.quote.toLowerCase().includes(q))
+      );
+    }
+    result.sort((a, b) => {
+      if (alumniSort === 'order-asc') return (a.order || 0) - (b.order || 0);
+      if (alumniSort === 'order-desc') return (b.order || 0) - (a.order || 0);
+      if (alumniSort === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+      if (alumniSort === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+      if (alumniSort === 'year-desc') return (b.year || '').localeCompare(a.year || '');
+      return 0;
+    });
+    return result;
   };
 
   // Delete message handler
@@ -439,6 +610,14 @@ export default function AdminDashboard() {
         payload.functions = payload.functions.split('\n').filter(l => l.trim() !== '');
       }
     }
+    if (modalType === 'career-path') {
+      if (typeof payload.tags === 'string') {
+        payload.tags = payload.tags.split(',').map(t => t.trim()).filter(t => t !== '');
+      }
+      if (typeof payload.skills === 'string') {
+        payload.skills = payload.skills.split(',').map(s => s.trim()).filter(s => s !== '');
+      }
+    }
 
     axios[method](endpoint, payload)
       .then(res => {
@@ -458,6 +637,12 @@ export default function AdminDashboard() {
           axios.get('/api/news').then(res => setNews(res.data));
         } else if (modalType === 'faq') {
           axios.get('/api/faqs').then(res => setFaqs(res.data));
+        } else if (modalType === 'student-resource') {
+          axios.get('/api/student-resources').then(res => setResources(res.data));
+        } else if (modalType === 'career-path') {
+          axios.get('/api/career-paths').then(res => setCareerPaths(res.data));
+        } else if (modalType === 'alumni-testimonial') {
+          axios.get('/api/alumni-testimonials').then(res => setAlumniTestimonials(res.data));
         }
       })
       .catch(err => {
@@ -478,7 +663,29 @@ export default function AdminDashboard() {
         if (type === 'event') setEvents(events.filter(x => x.id !== id));
         if (type === 'news') setNews(news.filter(x => x.id !== id));
         if (type === 'faq') setFaqs(faqs.filter(x => x.id !== id));
+        if (type === 'student-resource') setResources(resources.filter(x => x.id !== id));
+        if (type === 'career-path') setCareerPaths(careerPaths.filter(x => x.id !== id));
+        if (type === 'alumni-testimonial') setAlumniTestimonials(alumniTestimonials.filter(x => x.id !== id));
       });
+  };
+
+  const handleSaveAlumniShareLink = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    axios.post('/api/alumni-share-link', { link: alumniShareLink })
+      .then(res => {
+        setAlumniShareLink(res.data.link);
+        flashSuccess('Alumni share link updated successfully.');
+        Swal.fire({
+          title: 'Success!',
+          text: 'Alumni share link updated successfully!',
+          icon: 'success',
+          confirmButtonColor: '#15803d',
+        });
+      })
+      .catch(() => setError('Failed to update alumni share link.'))
+      .finally(() => setLoading(false));
   };
 
   // Render Loading / Redirecting view
@@ -524,6 +731,15 @@ export default function AdminDashboard() {
           </button>
           <button className={`nav-item ${activeTab === 'news' ? 'active' : ''}`} onClick={() => setActiveTab('news')}>
             📰 News Manager
+          </button>
+          <button className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`} onClick={() => setActiveTab('resources')}>
+            📁 Student Resources
+          </button>
+          <button className={`nav-item ${activeTab === 'careers' ? 'active' : ''}`} onClick={() => setActiveTab('careers')}>
+            💼 Career Board
+          </button>
+          <button className={`nav-item ${activeTab === 'alumni' ? 'active' : ''}`} onClick={() => setActiveTab('alumni')}>
+            🎓 Alumni Board
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -1168,27 +1384,82 @@ export default function AdminDashboard() {
                   setIsNew(true);
                 }}>+ Add Officer</button>
               </div>
+
+              {/* Search Bar */}
+              <div style={{
+                marginBottom: '20px',
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                position: 'relative'
+              }}>
+                <span style={{ position: 'absolute', left: '28px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search officers by role, name, year, motto..."
+                  value={officersSearch}
+                  onChange={e => setOfficersSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px 10px 36px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+                {officersSearch && (
+                  <button
+                    onClick={() => setOfficersSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: '28px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      color: '#64748b',
+                      padding: 0
+                    }}
+                  >
+                    ❌
+                  </button>
+                )}
+              </div>
+
               <div className="crud-list">
-                {officers.map(o => (
-                  <div key={o.id} className="crud-item">
-                    <div className="crud-item-content">
-                      <div className="officer-order-num">{o.order}</div>
-                      <div>
-                        <h4>{o.name}{o.officer_name ? <span style={{ fontWeight: 500, color: 'var(--admin-text-light)', marginLeft: '8px' }}>— {o.officer_name}</span> : null}</h4>
-                        <p>{o.year_level || ''}</p>
-                        {o.motto && <p style={{ fontSize: '0.78rem', fontStyle: 'italic', color: '#94a3b8', marginTop: '2px' }}>"{o.motto}"</p>}
+                {getFilteredOfficers().length === 0 ? (
+                  <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                    No officers match your search criteria.
+                  </p>
+                ) : (
+                  getFilteredOfficers().map(o => (
+                    <div key={o.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <div className="officer-order-num">{o.order}</div>
+                        <div>
+                          <h4>{o.name}{o.officer_name ? <span style={{ fontWeight: 500, color: 'var(--admin-text-light)', marginLeft: '8px' }}>— {o.officer_name}</span> : null}</h4>
+                          <p>{o.year_level || ''}</p>
+                          {o.motto && <p style={{ fontSize: '0.78rem', fontStyle: 'italic', color: '#94a3b8', marginTop: '2px' }}>"{o.motto}"</p>}
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({ ...o });
+                          setModalType('officer');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('officer', o.id)}>Delete</button>
                       </div>
                     </div>
-                    <div className="crud-item-actions">
-                      <button className="btn-edit" onClick={() => {
-                        setEditItem({ ...o });
-                        setModalType('officer');
-                        setIsNew(false);
-                      }}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDeleteCRUD('officer', o.id)}>Delete</button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1296,27 +1567,109 @@ export default function AdminDashboard() {
                     setIsNew(true);
                   }}>+ Add Event</button>
                 </div>
+
+                {/* Search & Sort Controls Bar */}
+                <div style={{
+                  display: 'flex',
+                  gap: '16px',
+                  marginBottom: '20px',
+                  flexWrap: 'wrap',
+                  background: '#f8fafc',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0',
+                  alignItems: 'center'
+                }}>
+                  <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search events by title, category, venue..."
+                      value={eventsSearch}
+                      onChange={e => setEventsSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px 10px 36px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                        transition: 'border-color 0.2s'
+                      }}
+                    />
+                    {eventsSearch && (
+                      <button
+                        onClick={() => setEventsSearch('')}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          color: '#64748b',
+                          padding: 0
+                        }}
+                      >
+                        ❌
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>Sort By:</label>
+                    <select
+                      value={eventsSort}
+                      onChange={e => setEventsSort(e.target.value)}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        background: 'white',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="date-desc">Newest First</option>
+                      <option value="date-asc">Oldest First</option>
+                      <option value="title-asc">Title A-Z</option>
+                      <option value="title-desc">Title Z-A</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="crud-list">
-                  {events.map(ev => (
-                    <div key={ev.id} className="crud-item">
-                      <div className="crud-item-content">
-                        <span className="crud-item-icon">{ev.icon}</span>
-                        <div>
-                          <h4>{ev.title}</h4>
-                          <p className="item-secondary-meta">Category: {ev.category} | Date: {ev.date} | Venue: {ev.venue}</p>
-                          <p className="item-body-preview">{ev.desc}</p>
+                  {getFilteredEvents().length === 0 ? (
+                    <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                      No events match your search criteria.
+                    </p>
+                  ) : (
+                    getFilteredEvents().map(ev => (
+                      <div key={ev.id} className="crud-item">
+                        <div className="crud-item-content">
+                          <span className="crud-item-icon">{ev.icon}</span>
+                          <div>
+                            <h4>{ev.title}</h4>
+                            <p className="item-secondary-meta">Category: {ev.category} | Date: {ev.date} | Venue: {ev.venue}</p>
+                            <p className="item-body-preview">{ev.desc}</p>
+                          </div>
+                        </div>
+                        <div className="crud-item-actions">
+                          <button className="btn-edit" onClick={() => {
+                            setEditItem({ ...ev });
+                            setModalType('event');
+                            setIsNew(false);
+                          }}>Edit</button>
+                          <button className="btn-delete" onClick={() => handleDeleteCRUD('event', ev.id)}>Delete</button>
                         </div>
                       </div>
-                      <div className="crud-item-actions">
-                        <button className="btn-edit" onClick={() => {
-                          setEditItem({ ...ev });
-                          setModalType('event');
-                          setIsNew(false);
-                        }}>Edit</button>
-                        <button className="btn-delete" onClick={() => handleDeleteCRUD('event', ev.id)}>Delete</button>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -1343,27 +1696,522 @@ export default function AdminDashboard() {
                   setIsNew(true);
                 }}>+ Add News</button>
               </div>
+
+              {/* Search & Sort Controls Bar */}
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                alignItems: 'center'
+              }}>
+                <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search by title, category, content..."
+                    value={newsSearch}
+                    onChange={e => setNewsSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 36px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                  {newsSearch && (
+                    <button
+                      onClick={() => setNewsSearch('')}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        color: '#64748b',
+                        padding: 0
+                      }}
+                    >
+                      ❌
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>Sort By:</label>
+                  <select
+                    value={newsSort}
+                    onChange={e => setNewsSort(e.target.value)}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      background: 'white',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="title-asc">Title A-Z</option>
+                    <option value="title-desc">Title Z-A</option>
+                    <option value="featured-first">Featured First</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="crud-list">
-                {news.map(n => (
-                  <div key={n.id} className="crud-item">
-                    <div className="crud-item-content">
-                      <span className="crud-item-icon">{n.emoji}</span>
-                      <div>
-                        <h4>{n.title} {n.featured && <span className="featured-pill">Featured</span>}</h4>
-                        <p className="item-secondary-meta">Category: {n.category} | Date: {n.date} | Read time: {n.readTime}</p>
-                        <p className="item-body-preview">{n.excerpt}</p>
+                {getFilteredNews().length === 0 ? (
+                  <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                    No news articles match your search criteria.
+                  </p>
+                ) : (
+                  getFilteredNews().map(n => (
+                    <div key={n.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <span className="crud-item-icon">{n.emoji}</span>
+                        <div>
+                          <h4>{n.title} {n.featured && <span className="featured-pill">Featured</span>}</h4>
+                          <p className="item-secondary-meta">Category: {n.category} | Date: {n.date} | Read time: {n.readTime}</p>
+                          <p className="item-body-preview">{n.excerpt}</p>
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({ ...n, content: n.content || '', images: n.images || [] });
+                          setModalType('news');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('news', n.id)}>Delete</button>
                       </div>
                     </div>
-                    <div className="crud-item-actions">
-                      <button className="btn-edit" onClick={() => {
-                        setEditItem({ ...n, content: n.content || '', images: n.images || [] });
-                        setModalType('news');
-                        setIsNew(false);
-                      }}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDeleteCRUD('news', n.id)}>Delete</button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Student Resources */}
+          {activeTab === 'resources' && (
+            <div className="panel-card">
+              <div className="panel-header-crud">
+                <h3>Student & Member Resources</h3>
+                <button className="btn-add-crud" onClick={() => {
+                  setEditItem({
+                    category: 'Academic Templates',
+                    title: '',
+                    description: '',
+                    date_modified: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    download_link_1: '',
+                    download_link_2: '',
+                    order: resources.length + 1
+                  });
+                  setModalType('student-resource');
+                  setIsNew(true);
+                }}>+ Add Resource</button>
+              </div>
+
+              {/* Search Bar */}
+              <div style={{
+                marginBottom: '20px',
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                position: 'relative'
+              }}>
+                <span style={{ position: 'absolute', left: '28px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search resources by title, category, description..."
+                  value={resourcesSearch}
+                  onChange={e => setResourcesSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px 10px 36px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+                {resourcesSearch && (
+                  <button
+                    onClick={() => setResourcesSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: '28px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      color: '#64748b',
+                      padding: 0
+                    }}
+                  >
+                    ❌
+                  </button>
+                )}
+              </div>
+
+              <div className="crud-list">
+                {getFilteredResources().length === 0 ? (
+                  <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                    No resources match your search criteria.
+                  </p>
+                ) : (
+                  getFilteredResources().map(r => (
+                    <div key={r.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <span className="crud-item-icon">📁</span>
+                        <div>
+                          <h4>{r.title}</h4>
+                          <p className="item-secondary-meta">Category: {r.category} | Modified: {r.date_modified} | Order: {r.order}</p>
+                          <p className="item-body-preview">{r.description}</p>
+                          <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                            <a href={r.download_link_1} target="_blank" rel="noopener noreferrer" className="badge-meta" style={{ textDecoration: 'none', background: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px' }}>Download Link 1 🔗</a>
+                            {r.download_link_2 && (
+                              <a href={r.download_link_2} target="_blank" rel="noopener noreferrer" className="badge-meta" style={{ textDecoration: 'none', background: '#fef3c7', color: '#d97706', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px' }}>Download Link 2 🔗</a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({ ...r, description: r.description || '', download_link_2: r.download_link_2 || '' });
+                          setModalType('student-resource');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('student-resource', r.id)}>Delete</button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Career Board */}
+          {activeTab === 'careers' && (
+            <div className="panel-card">
+              <div className="panel-header-crud">
+                <h3>IT Career Paths</h3>
+                <button className="btn-add-crud" onClick={() => {
+                  setEditItem({
+                    icon: '💻',
+                    title: '',
+                    tags: '',
+                    desc: '',
+                    skills: '',
+                    outlook: 'High Demand',
+                    salary: '',
+                    color: '#4f46e5',
+                    order: careerPaths.length + 1
+                  });
+                  setModalType('career-path');
+                  setIsNew(true);
+                }}>+ Add Career Path</button>
+              </div>
+              <p className="panel-desc" style={{ color: 'var(--admin-text-light)', fontSize: '0.85rem', marginBottom: '16px' }}>Manage the IT career paths displayed on the public career page.</p>
+
+              {/* Search & Sort Controls Bar */}
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                alignItems: 'center'
+              }}>
+                <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search careers by title, outlook, tags, description..."
+                    value={careersSearch}
+                    onChange={e => setCareersSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 36px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                  {careersSearch && (
+                    <button
+                      onClick={() => setCareersSearch('')}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        color: '#64748b',
+                        padding: 0
+                      }}
+                    >
+                      ❌
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>Sort By:</label>
+                  <select
+                    value={careersSort}
+                    onChange={e => setCareersSort(e.target.value)}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      background: 'white',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="order-asc">Default Order (Low to High)</option>
+                    <option value="order-desc">Default Order (High to Low)</option>
+                    <option value="title-asc">Title A-Z</option>
+                    <option value="title-desc">Title Z-A</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="crud-list">
+                {getFilteredCareers().length === 0 ? (
+                  <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                    No career paths match your search criteria.
+                  </p>
+                ) : (
+                  getFilteredCareers().map(c => (
+                    <div key={c.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <span className="crud-item-icon" style={{ background: c.color + '1a', color: c.color, width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontSize: '1.5rem', flexShrink: 0 }}>
+                          {c.icon}
+                        </span>
+                        <div>
+                          <h4 style={{ margin: '0 0 4px 0' }}>{c.title}</h4>
+                          <p className="item-secondary-meta" style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: 'var(--admin-text-light)' }}>
+                            Outlook: <strong>{c.outlook}</strong> | Salary: <strong>{c.salary}</strong> | Order: {c.order}
+                          </p>
+                          <p className="item-body-preview" style={{ margin: 0, fontSize: '0.85rem' }}>{c.desc}</p>
+                          <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                            {(Array.isArray(c.tags) ? c.tags : []).map(t => (
+                              <span key={t} className="badge-meta" style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px' }}>{t}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({
+                            ...c,
+                            tags: Array.isArray(c.tags) ? c.tags.join(', ') : c.tags,
+                            skills: Array.isArray(c.skills) ? c.skills.join(', ') : c.skills
+                          });
+                          setModalType('career-path');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('career-path', c.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Alumni Board */}
+          {activeTab === 'alumni' && (
+            <div className="panel-card">
+              <div className="panel-header-crud">
+                <h3>Alumni Testimonials</h3>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <form onSubmit={handleSaveAlumniShareLink} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: '600', color: '#475569', whiteSpace: 'nowrap', margin: 0, textTransform: 'none' }}>Share Link:</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. /#contact or Google Form URL"
+                      value={alumniShareLink}
+                      onChange={e => setAlumniShareLink(e.target.value)}
+                      style={{
+                        padding: '6px 10px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '0.82rem',
+                        outline: 'none',
+                        width: '240px',
+                        fontFamily: 'inherit',
+                        background: 'white'
+                      }}
+                    />
+                    <button type="submit" className="btn-edit" style={{ padding: '6px 12px', whiteSpace: 'nowrap', margin: 0, height: '34px', display: 'flex', alignItems: 'center' }}>Save Link</button>
+                  </form>
+                  <button className="btn-add-crud" onClick={() => {
+                    setEditItem({
+                      name: '',
+                      role: '',
+                      company: '',
+                      year: '',
+                      quote: '',
+                      avatar: '',
+                      image: '',
+                      color: '#0891b2',
+                      order: alumniTestimonials.length + 1
+                    });
+                    setModalType('alumni-testimonial');
+                    setIsNew(true);
+                  }}>+ Add Alumni Story</button>
+                </div>
+              </div>
+              <p className="panel-desc" style={{ color: 'var(--admin-text-light)', fontSize: '0.85rem', marginBottom: '16px' }}>Manage alumni success stories and testimonials featured on the career page.</p>
+
+              {/* Search & Sort Controls Bar */}
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                alignItems: 'center'
+              }}>
+                <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search alumni by name, role, company, quote..."
+                    value={alumniSearch}
+                    onChange={e => setAlumniSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 36px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      transition: 'border-color 0.2s'
+                    }}
+                  />
+                  {alumniSearch && (
+                    <button
+                      onClick={() => setAlumniSearch('')}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        color: '#64748b',
+                        padding: 0
+                      }}
+                    >
+                      ❌
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', whiteSpace: 'nowrap' }}>Sort By:</label>
+                  <select
+                    value={alumniSort}
+                    onChange={e => setAlumniSort(e.target.value)}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      background: 'white',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="order-asc">Default Order (Low to High)</option>
+                    <option value="order-desc">Default Order (High to Low)</option>
+                    <option value="name-asc">Name A-Z</option>
+                    <option value="name-desc">Name Z-A</option>
+                    <option value="year-desc">Year (Newest to Oldest)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="crud-list">
+                {getFilteredAlumni().length === 0 ? (
+                  <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
+                    No alumni stories match your search criteria.
+                  </p>
+                ) : (
+                  getFilteredAlumni().map(a => (
+                    <div key={a.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <span className="crud-item-icon" style={{ background: a.color, color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '1rem', fontWeight: 'bold', flexShrink: 0, overflow: 'hidden' }}>
+                          {a.image ? (
+                            <img src={a.image} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : a.avatar ? (
+                            a.avatar
+                          ) : (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '20px', height: '20px', opacity: 0.9 }}>
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                          )}
+                        </span>
+                        <div>
+                          <h4 style={{ margin: '0 0 4px 0' }}>{a.name} <span style={{ fontSize: '0.8rem', color: 'var(--admin-text-light)', fontWeight: 400 }}>({a.year})</span></h4>
+                          <p className="item-secondary-meta" style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: 'var(--admin-text-light)' }}>
+                            Role: <strong>{a.role}</strong> at <strong>{a.company}</strong> | Order: {a.order}
+                          </p>
+                          <p className="item-body-preview" style={{ margin: 0, fontSize: '0.85rem', fontStyle: 'italic', color: '#475569' }}>"{a.quote}"</p>
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({ ...a });
+                          setModalType('alumni-testimonial');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('alumni-testimonial', a.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -1818,6 +2666,235 @@ export default function AdminDashboard() {
                   <div className="form-group">
                     <label>Sort Order Index</label>
                     <input type="number" value={editItem.order} onChange={e => setEditItem({...editItem, order: parseInt(e.target.value) || 0})} required />
+                  </div>
+                </>
+              )}
+
+              {/* STUDENT RESOURCE FIELDS */}
+              {modalType === 'student-resource' && (
+                <>
+                  <div className="form-group">
+                    <label>Category</label>
+                    <select value={editItem.category} onChange={e => setEditItem({...editItem, category: e.target.value})} required style={{ width: '100%' }}>
+                      <option>Academic Templates</option>
+                      <option>Class & Study Tools</option>
+                      <option>Official Forms</option>
+                      <option>Cheat Sheets & Guides</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input type="text" value={editItem.title} onChange={e => setEditItem({...editItem, title: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea rows={3} value={editItem.description || ''} onChange={e => setEditItem({...editItem, description: e.target.value})} />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Date Modified (e.g., Jun. 12, 2026)</label>
+                      <input type="text" value={editItem.date_modified} onChange={e => setEditItem({...editItem, date_modified: e.target.value})} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Sort Order Index</label>
+                      <input type="number" value={editItem.order} onChange={e => setEditItem({...editItem, order: parseInt(e.target.value) || 0})} required />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Primary Download Link (Google Drive / Docs URL)</label>
+                    <input type="url" value={editItem.download_link_1} onChange={e => setEditItem({...editItem, download_link_1: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Secondary Download Link (Optional Mirror URL)</label>
+                    <input type="url" value={editItem.download_link_2 || ''} onChange={e => setEditItem({...editItem, download_link_2: e.target.value})} />
+                  </div>
+                </>
+              )}
+
+              {/* CAREER PATH FIELDS */}
+              {modalType === 'career-path' && (
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Career Title</label>
+                      <input type="text" value={editItem.title || ''} onChange={e => setEditItem({...editItem, title: e.target.value})} required />
+                    </div>
+                    <div className="form-group" style={{ maxWidth: '100px' }}>
+                      <label>Icon Emoji</label>
+                      <input type="text" value={editItem.icon || ''} onChange={e => setEditItem({...editItem, icon: e.target.value})} required style={{ textAlign: 'center', fontSize: '1.25rem' }} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Tags (Comma-separated, e.g., Backend, Frontend, Full-Stack)</label>
+                    <input type="text" value={editItem.tags || ''} onChange={e => setEditItem({...editItem, tags: e.target.value})} placeholder="Backend, Full-Stack" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea rows={3} value={editItem.desc || ''} onChange={e => setEditItem({...editItem, desc: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Key Skills to Learn (Comma-separated, e.g., Data Structures, Algorithms, APIs)</label>
+                    <input type="text" value={editItem.skills || ''} onChange={e => setEditItem({...editItem, skills: e.target.value})} placeholder="Data Structures, Algorithms, APIs" required />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Demand Outlook</label>
+                      <select value={editItem.outlook || 'High Demand'} onChange={e => setEditItem({...editItem, outlook: e.target.value})} required>
+                        <option>High Demand</option>
+                        <option>Very High Demand</option>
+                        <option>Growing Fast</option>
+                        <option>Explosive Growth</option>
+                        <option>Critical Need</option>
+                        <option>Steady Demand</option>
+                        <option>Steady Growth</option>
+                        <option>Stable</option>
+                        <option>Stable Demand</option>
+                        <option>Growing</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Salary Range (e.g., ₱40k–₱120k/mo)</label>
+                      <input type="text" value={editItem.salary || ''} onChange={e => setEditItem({...editItem, salary: e.target.value})} placeholder="₱40k–₱120k/mo" required />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Accent Color (Hex code)</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input type="color" value={editItem.color || '#4f46e5'} onChange={e => setEditItem({...editItem, color: e.target.value})} style={{ width: '40px', padding: 0, border: 'none', height: '40px', borderRadius: '4px', cursor: 'pointer' }} />
+                        <input type="text" value={editItem.color || ''} onChange={e => setEditItem({...editItem, color: e.target.value})} placeholder="#4f46e5" required style={{ flex: 1 }} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Sort Order Index</label>
+                      <input type="number" value={editItem.order} onChange={e => setEditItem({...editItem, order: parseInt(e.target.value) || 0})} required />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ALUMNI TESTIMONIAL FIELDS */}
+              {modalType === 'alumni-testimonial' && (
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Alumnus Name</label>
+                      <input type="text" value={editItem.name || ''} onChange={e => setEditItem({...editItem, name: e.target.value})} required />
+                    </div>
+                    <div className="form-group" style={{ maxWidth: '100px' }}>
+                      <label>Avatar Initials</label>
+                      <input type="text" value={editItem.avatar || ''} onChange={e => setEditItem({...editItem, avatar: e.target.value})} placeholder="e.g. MS" maxLength={3} style={{ textAlign: 'center', fontWeight: 'bold' }} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Alumnus Profile Photo (Optional Image)</label>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp,image/gif"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (!file) return;
+                              if (file.size > 5 * 1024 * 1024) {
+                                setError('File size must be less than 5MB.');
+                                return;
+                              }
+                              const formData = new FormData();
+                              formData.append('image', file);
+                              setLoading(true);
+                              setError('');
+                              axios.post('/api/alumni-testimonials/upload-avatar', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                              })
+                              .then(res => {
+                                if (res.data.success) {
+                                  setEditItem(prev => ({ ...prev, image: res.data.path }));
+                                  flashSuccess('Avatar image uploaded.');
+                                }
+                              })
+                              .catch(err => setError(err.response?.data?.message || 'Upload failed.'))
+                              .finally(() => setLoading(false));
+                            }}
+                            style={{ fontSize: '0.85rem' }}
+                          />
+                          {editItem.image && (
+                            <button
+                              type="button"
+                              onClick={() => setEditItem(prev => ({ ...prev, image: '' }))}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                border: '1px solid #fca5a5',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: '700',
+                                fontSize: '0.75rem',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              ❌ Remove
+                            </button>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--admin-text-light)', margin: '4px 0 0' }}>
+                          PNG, JPG, SVG, WebP up to 5MB. Optional.
+                        </p>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        border: '2px dashed #cbd5e1',
+                        background: editItem.color || '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        flexShrink: 0
+                      }}>
+                        {editItem.image ? (
+                          <img src={editItem.image} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>
+                            {editItem.avatar || '?'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Job Role (e.g. UX/UI Designer)</label>
+                      <input type="text" value={editItem.role || ''} onChange={e => setEditItem({...editItem, role: e.target.value})} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Company (e.g. GCash)</label>
+                      <input type="text" value={editItem.company || ''} onChange={e => setEditItem({...editItem, company: e.target.value})} required />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Course & Graduation Year (e.g. BSIT 2022)</label>
+                      <input type="text" value={editItem.year || ''} onChange={e => setEditItem({...editItem, year: e.target.value})} placeholder="BSIT 2022" required />
+                    </div>
+                    <div className="form-group">
+                      <label>Sort Order Index</label>
+                      <input type="number" value={editItem.order} onChange={e => setEditItem({...editItem, order: parseInt(e.target.value) || 0})} required />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Quote / Testimonial</label>
+                    <textarea rows={4} value={editItem.quote || ''} onChange={e => setEditItem({...editItem, quote: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Theme Color (Hex code)</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input type="color" value={editItem.color || '#0891b2'} onChange={e => setEditItem({...editItem, color: e.target.value})} style={{ width: '40px', padding: 0, border: 'none', height: '40px', borderRadius: '4px', cursor: 'pointer' }} />
+                      <input type="text" value={editItem.color || ''} onChange={e => setEditItem({...editItem, color: e.target.value})} placeholder="#0891b2" required style={{ flex: 1 }} />
+                    </div>
                   </div>
                 </>
               )}

@@ -28,6 +28,14 @@ Route::get('/news/{id}', function () {
     return view('welcome');
 });
 
+Route::get('/career', function () {
+    return view('welcome');
+});
+
+Route::get('/resources', function () {
+    return view('welcome');
+});
+
 // Public API routes
 Route::post('/api/contact-messages', [AdminController::class, 'submitContactMessage']);
 Route::get('/api/about', [AdminController::class, 'getAbout']);
@@ -41,6 +49,10 @@ Route::get('/api/events-settings', [AdminController::class, 'getEventsSettings']
 Route::get('/api/news', [AdminController::class, 'getNews']);
 Route::get('/api/news/{id}', [AdminController::class, 'getNewsItem']);
 Route::get('/api/faqs', [AdminController::class, 'getFaqs']);
+Route::get('/api/student-resources', [AdminController::class, 'getStudentResources']);
+Route::get('/api/career-paths', [AdminController::class, 'getCareerPaths']);
+Route::get('/api/alumni-testimonials', [AdminController::class, 'getAlumniTestimonials']);
+Route::get('/api/alumni-share-link', [AdminController::class, 'getAlumniShareLink']);
 
 // Auth management
 Route::post('/api/login', [AdminController::class, 'login']);
@@ -85,4 +97,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/faqs', [AdminController::class, 'createFaq']);
     Route::put('/api/faqs/{id}', [AdminController::class, 'updateFaq']);
     Route::delete('/api/faqs/{id}', [AdminController::class, 'deleteFaq']);
+
+    Route::post('/api/student-resources', [AdminController::class, 'createStudentResource']);
+    Route::put('/api/student-resources/{id}', [AdminController::class, 'updateStudentResource']);
+    Route::delete('/api/student-resources/{id}', [AdminController::class, 'deleteStudentResource']);
+
+    Route::post('/api/career-paths', [AdminController::class, 'createCareerPath']);
+    Route::put('/api/career-paths/{id}', [AdminController::class, 'updateCareerPath']);
+    Route::delete('/api/career-paths/{id}', [AdminController::class, 'deleteCareerPath']);
+
+    Route::post('/api/alumni-testimonials', [AdminController::class, 'createAlumniTestimonial']);
+    Route::put('/api/alumni-testimonials/{id}', [AdminController::class, 'updateAlumniTestimonial']);
+    Route::delete('/api/alumni-testimonials/{id}', [AdminController::class, 'deleteAlumniTestimonial']);
+    Route::post('/api/alumni-testimonials/upload-avatar', [AdminController::class, 'uploadAlumniAvatar']);
+    Route::post('/api/alumni-share-link', [AdminController::class, 'updateAlumniShareLink']);
 });
