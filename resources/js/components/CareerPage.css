@@ -586,15 +586,14 @@
 .alumni-card__photo-wrapper {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: auto;
   overflow: hidden;
   border-radius: 15px 15px 0 0;
 }
 .alumni-card__photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
   transition: transform 0.5s ease;
 }
 .alumni-card--photo:hover .alumni-card__photo {
@@ -603,7 +602,7 @@
 .alumni-card__photo-quote {
   position: absolute;
   left: 24px;
-  top: 240px;
+  top: 100%;
   transform: translateY(-50%);
   width: 38px;
   height: 38px;
