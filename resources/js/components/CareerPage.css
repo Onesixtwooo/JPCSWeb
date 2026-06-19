@@ -755,3 +755,32 @@
   50% { opacity: 1; }
 }
 
+/* Light background override for careers section pagination */
+.careerpage__careers .careerpage__page-num,
+.careerpage__careers .careerpage__page-arrow {
+  border: 1px solid var(--gray-300);
+  background: white;
+  color: var(--gray-700);
+}
+
+.careerpage__careers .careerpage__page-num:hover,
+.careerpage__careers .careerpage__page-arrow:hover:not(:disabled) {
+  background: var(--green-50);
+  border-color: var(--green-300);
+  color: var(--green-700);
+}
+
+.careerpage__careers .careerpage__page-num.active {
+  background: var(--green-600);
+  color: white;
+  border-color: var(--green-600);
+  box-shadow: 0 4px 16px rgba(21, 128, 61, 0.15);
+}
+
+.careerpage__careers .careerpage__page-arrow:disabled {
+  opacity: 0.5;
+  background: var(--gray-100);
+  color: var(--gray-400);
+  border-color: var(--gray-200);
+}
+

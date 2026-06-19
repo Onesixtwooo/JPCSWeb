@@ -84,6 +84,7 @@ const formatDateToISO = (dateStr) => {
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null represents checking
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -119,6 +120,8 @@ export default function AdminDashboard() {
   const [resources, setResources] = useState([]);
   const [careerPaths, setCareerPaths] = useState([]);
   const [alumniTestimonials, setAlumniTestimonials] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loginLogs, setLoginLogs] = useState([]);
   const [eventsSettings, setEventsSettings] = useState({
     events_title: '',
     events_description: ''
@@ -157,6 +160,10 @@ export default function AdminDashboard() {
 
   const [careersSearch, setCareersSearch] = useState('');
   const [careersSort, setCareersSort] = useState('order-asc');
+  const [careersPage, setCareersPage] = useState(1);
+  const [logsPage, setLogsPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
+  const [userSubTab, setUserSubTab] = useState('all');
 
   const [alumniSearch, setAlumniSearch] = useState('');
   const [alumniSort, setAlumniSort] = useState('order-asc');
@@ -167,12 +174,36 @@ export default function AdminDashboard() {
   const [modalType, setModalType] = useState(''); // 'pillar', 'officer', 'team', 'event', 'news'
   const [isNew, setIsNew] = useState(false);
 
+  // Reply Inbox States
+  const [replyingToId, setReplyingToId] = useState(null);
+  const [replySubject, setReplySubject] = useState('');
+  const [replyBody, setReplyBody] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [messagesSearch, setMessagesSearch] = useState('');
+  const [messagesSort, setMessagesSort] = useState('date-desc');
+  const [messagesFilterTab, setMessagesFilterTab] = useState('all');
+  const [showSmtpModal, setShowSmtpModal] = useState(false);
+  const [smtpSettings, setSmtpSettings] = useState({
+    mail_mailer: 'log',
+    mail_host: '127.0.0.1',
+    mail_port: 2525,
+    mail_username: '',
+    mail_password: '',
+    mail_encryption: '',
+    mail_from_address: 'hello@example.com',
+    mail_from_name: ''
+  });
+
   // Checks authentication on mount
   useEffect(() => {
     axios.get('/api/auth/check')
       .then(res => {
         setIsAuthenticated(res.data.authenticated);
-        if (!res.data.authenticated) {
+        if (res.data.authenticated) {
+          setCurrentUser(res.data.user);
+          axios.get('/api/about').then(aboutRes => setAboutSettings(aboutRes.data));
+        } else {
           window.location.href = '/login';
         }
       })
@@ -181,6 +212,20 @@ export default function AdminDashboard() {
         window.location.href = '/login';
       });
   }, []);
+
+  useEffect(() => {
+    setCareersPage(1);
+  }, [careersSearch, careersSort]);
+
+  useEffect(() => {
+    setLogsPage(1);
+    setUsersPage(1);
+    setUserSubTab('all');
+  }, [activeTab]);
+
+  useEffect(() => {
+    setUsersPage(1);
+  }, [userSubTab]);
 
   // Fetch data depending on active tab when authenticated
   useEffect(() => {
@@ -211,6 +256,10 @@ export default function AdminDashboard() {
     } else if (activeTab === 'alumni') {
       axios.get('/api/alumni-testimonials').then(res => setAlumniTestimonials(res.data));
       axios.get('/api/alumni-share-link').then(res => setAlumniShareLink(res.data.link));
+    } else if (activeTab === 'users') {
+      axios.get('/api/users').then(res => setUsers(res.data));
+    } else if (activeTab === 'logs') {
+      axios.get('/api/audit-logs').then(res => setLoginLogs(res.data));
     }
   }, [isAuthenticated, activeTab]);
 
@@ -372,6 +421,53 @@ export default function AdminDashboard() {
     return result;
   };
 
+  const getFilteredMessages = () => {
+    let result = [...messages];
+
+    // Filter by Replied / Pending Tab
+    if (messagesFilterTab === 'replied') {
+      result = result.filter(m => m.replies && m.replies.length > 0);
+    } else if (messagesFilterTab === 'unreplied') {
+      result = result.filter(m => !m.replies || m.replies.length === 0);
+    }
+
+    if (messagesSearch.trim() !== '') {
+      const q = messagesSearch.toLowerCase();
+      result = result.filter(m => 
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
+        (m.subject && m.subject.toLowerCase().includes(q)) ||
+        (m.message && m.message.toLowerCase().includes(q))
+      );
+    }
+    result.sort((a, b) => {
+      if (messagesSort === 'date-desc') return new Date(b.created_at) - new Date(a.created_at);
+      if (messagesSort === 'date-asc') return new Date(a.created_at) - new Date(b.created_at);
+      if (messagesSort === 'name-asc') return (a.name || '').localeCompare(b.name || '');
+      if (messagesSort === 'name-desc') return (b.name || '').localeCompare(a.name || '');
+      if (messagesSort === 'replied-first') {
+        const aReplied = a.replies && a.replies.length > 0 ? 1 : 0;
+        const bReplied = b.replies && b.replies.length > 0 ? 1 : 0;
+        return bReplied - aReplied;
+      }
+      if (messagesSort === 'unreplied-first') {
+        const aReplied = a.replies && a.replies.length > 0 ? 1 : 0;
+        const bReplied = b.replies && b.replies.length > 0 ? 1 : 0;
+        return aReplied - bReplied;
+      }
+      return 0;
+    });
+    return result;
+  };
+
+  const careersPerPage = 5;
+  const filteredCareers = getFilteredCareers();
+  const totalCareersPages = Math.ceil(filteredCareers.length / careersPerPage);
+  const activeCareersPage = totalCareersPages > 0 ? Math.min(careersPage, totalCareersPages) : 1;
+  const indexOfLastCareer = activeCareersPage * careersPerPage;
+  const indexOfFirstCareer = indexOfLastCareer - careersPerPage;
+  const currentCareers = filteredCareers.slice(indexOfFirstCareer, indexOfLastCareer);
+
   // Delete message handler
   const handleDeleteMessage = (id) => {
     if (!confirm('Are you sure you want to delete this message?')) return;
@@ -379,6 +475,88 @@ export default function AdminDashboard() {
       .then(() => {
         setMessages(messages.filter(m => m.id !== id));
         flashSuccess('Message deleted.');
+      });
+  };
+
+  const handleOpenReply = (m) => {
+    setReplyingToId(m.id);
+    setReplySubject(m.subject.startsWith('Re:') ? m.subject : `Re: ${m.subject}`);
+    setReplyBody(`Hi ${m.name},\n\n\n\nBest regards,\nJPCS OLSHCo Chapter`);
+  };
+
+  const handleSendReply = (messageId) => {
+    if (!replyBody.trim()) return;
+    setSendingReply(true);
+    setError('');
+    axios.post(`/api/contact-messages/${messageId}/reply`, {
+      subject: replySubject,
+      reply_body: replyBody
+    })
+    .then(res => {
+      flashSuccess('Reply sent successfully.');
+      // Refresh the contact messages list to load the new reply in the thread
+      axios.get('/api/contact-messages').then(res => setMessages(res.data));
+      // Reset state
+      setReplyingToId(null);
+      setReplySubject('');
+      setReplyBody('');
+    })
+    .catch(err => {
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.message || 'Failed to send reply.',
+        icon: 'error',
+        confirmButtonColor: '#dc2626'
+      });
+    })
+    .finally(() => {
+      setSendingReply(false);
+    });
+  };
+
+  const handleOpenSmtpSettings = () => {
+    setLoading(true);
+    axios.get('/api/smtp-settings')
+      .then(res => {
+        setSmtpSettings(res.data);
+        setShowSmtpModal(true);
+      })
+      .catch(err => {
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to fetch SMTP settings.',
+          icon: 'error',
+          confirmButtonColor: '#dc2626'
+        });
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  const handleSaveSmtpSettings = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    axios.post('/api/smtp-settings', smtpSettings)
+      .then(res => {
+        setShowSmtpModal(false);
+        Swal.fire({
+          title: 'Success!',
+          text: 'SMTP credentials saved to environment configuration successfully! Config cache cleared.',
+          icon: 'success',
+          confirmButtonColor: '#15803d',
+        });
+      })
+      .catch(err => {
+        Swal.fire({
+          title: 'Error!',
+          text: err.response?.data?.message || 'Failed to save SMTP settings.',
+          icon: 'error',
+          confirmButtonColor: '#dc2626'
+        });
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -621,7 +799,25 @@ export default function AdminDashboard() {
 
     axios[method](endpoint, payload)
       .then(res => {
-        flashSuccess(`${modalType.toUpperCase()} saved successfully.`);
+        if (modalType === 'user' && isNew) {
+          if (res.data.email_sent) {
+            Swal.fire({
+              title: 'User Created!',
+              text: 'The user account has been successfully created, and the auto-generated password was sent to their email address.',
+              icon: 'success',
+              confirmButtonColor: '#15803d'
+            });
+          } else {
+            Swal.fire({
+              title: 'Created with Mail Warning',
+              text: 'The user account was created successfully, but the system failed to deliver the welcome credentials email. Please verify your SMTP settings or copy/reset their password manually.',
+              icon: 'warning',
+              confirmButtonColor: '#d97706'
+            });
+          }
+        } else {
+          flashSuccess(`${modalType.toUpperCase()} saved successfully.`);
+        }
         setEditItem(null);
         
         // Refresh local listings
@@ -643,6 +839,8 @@ export default function AdminDashboard() {
           axios.get('/api/career-paths').then(res => setCareerPaths(res.data));
         } else if (modalType === 'alumni-testimonial') {
           axios.get('/api/alumni-testimonials').then(res => setAlumniTestimonials(res.data));
+        } else if (modalType === 'user') {
+          axios.get('/api/users').then(res => setUsers(res.data));
         }
       })
       .catch(err => {
@@ -666,6 +864,15 @@ export default function AdminDashboard() {
         if (type === 'student-resource') setResources(resources.filter(x => x.id !== id));
         if (type === 'career-path') setCareerPaths(careerPaths.filter(x => x.id !== id));
         if (type === 'alumni-testimonial') setAlumniTestimonials(alumniTestimonials.filter(x => x.id !== id));
+        if (type === 'user') setUsers(users.filter(x => x.id !== id));
+      })
+      .catch(err => {
+        Swal.fire({
+          title: 'Error!',
+          text: err.response?.data?.message || 'Delete operation failed.',
+          icon: 'error',
+          confirmButtonColor: '#15803d',
+        });
       });
   };
 
@@ -688,6 +895,33 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   };
 
+  // Pagination calculations for Users
+  const getFilteredUsers = () => {
+    if (userSubTab === 'admin') {
+      return users.filter(u => u.role === 'admin');
+    }
+    if (userSubTab === 'editor') {
+      return users.filter(u => u.role === 'editor');
+    }
+    return users;
+  };
+
+  const filteredUsers = getFilteredUsers();
+  const usersPerPage = 8;
+  const totalUsersPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const activeUsersPage = totalUsersPages > 0 ? Math.min(usersPage, totalUsersPages) : 1;
+  const indexOfLastUser = activeUsersPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+  // Pagination calculations for Audit Logs
+  const logsPerPage = 8;
+  const totalLogsPages = Math.ceil(loginLogs.length / logsPerPage);
+  const activeLogsPage = totalLogsPages > 0 ? Math.min(logsPage, totalLogsPages) : 1;
+  const indexOfLastLog = activeLogsPage * logsPerPage;
+  const indexOfFirstLog = indexOfLastLog - logsPerPage;
+  const currentLogs = loginLogs.slice(indexOfFirstLog, indexOfLastLog);
+
   // Render Loading / Redirecting view
   if (isAuthenticated === null || !isAuthenticated) {
     return (
@@ -704,10 +938,21 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="sidebar-brand">
-          <span className="brand-logo">JPCS</span>
+          {aboutSettings.brand_logo ? (
+            <img 
+              src={aboutSettings.brand_logo} 
+              alt="Logo" 
+              className="brand-logo" 
+              style={{ objectFit: 'contain', background: 'transparent', padding: '4px' }} 
+            />
+          ) : (
+            <span className="brand-logo">
+              {aboutSettings.brand_name ? aboutSettings.brand_name.split('-')[0] : 'JPCS'}
+            </span>
+          )}
           <div>
-            <h3>JPCS Portal</h3>
-            <span>OLSHCo Chapter</span>
+            <h3>{aboutSettings.brand_name || 'JPCS Portal'}</h3>
+            <span>{aboutSettings.brand_subtext || 'OLSHCo Chapter'}</span>
           </div>
         </div>
         <nav className="sidebar-nav">
@@ -741,6 +986,16 @@ export default function AdminDashboard() {
           <button className={`nav-item ${activeTab === 'alumni' ? 'active' : ''}`} onClick={() => setActiveTab('alumni')}>
             🎓 Alumni Board
           </button>
+          {currentUser && currentUser.role === 'admin' && (
+            <button className={`nav-item ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
+              🔑 User Management
+            </button>
+          )}
+          {currentUser && currentUser.role === 'admin' && (
+            <button className={`nav-item ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
+              📈 Audit Logs
+            </button>
+          )}
         </nav>
         <div className="sidebar-footer">
           <button className="btn-logout" onClick={handleLogout}>Log Out 🚪</button>
@@ -751,39 +1006,271 @@ export default function AdminDashboard() {
       <main className="admin-main">
         <header className="admin-header">
           <h2>Dashboard Control Panel</h2>
-          <span className="admin-user-tag">Welcome, Admin</span>
+          <span className="admin-user-tag">Welcome, {currentUser ? `${currentUser.name} (${currentUser.role})` : 'Admin'}</span>
         </header>
 
         {success && <div className="admin-success-toast">{success}</div>}
 
-        <div className="admin-content-area">
-          {/* TAB: Messages Inbox */}
+                 {/* TAB: Messages Inbox */}
           {activeTab === 'messages' && (
-            <div className="panel-card">
-              <h3>User Submissions & Messages</h3>
-              <p className="panel-desc">Review inquiries submitted via the Contact form.</p>
-              
-              <div className="messages-list">
-                {messages.length === 0 ? (
-                  <p className="empty-message">No messages received yet.</p>
-                ) : (
-                  messages.map(m => (
-                    <div key={m.id} className="message-item">
-                      <div className="message-item-header">
-                        <h4>{m.subject}</h4>
-                        <button className="btn-delete-msg" onClick={() => handleDeleteMessage(m.id)}>Delete</button>
-                      </div>
-                      <div className="message-meta">
-                        <span><strong>From:</strong> {m.name} ({m.email})</span>
-                        <span><strong>Submitted:</strong> {new Date(m.created_at).toLocaleString()}</span>
-                      </div>
-                      <p className="message-body">{m.message}</p>
+            (() => {
+              const filteredMessages = getFilteredMessages();
+              const allCount = messages.length;
+              const repliedCount = messages.filter(m => m.replies && m.replies.length > 0).length;
+              const unrepliedCount = allCount - repliedCount;
+              return selectedMessageId === null ? (
+                <div className="gmail-inbox-card">
+                  <div className="gmail-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h3>User Submissions & Messages</h3>
+                      {currentUser && currentUser.role === 'admin' && (
+                        <button 
+                          onClick={handleOpenSmtpSettings}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '1.25rem',
+                            color: '#64748b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s'
+                          }}
+                          title="Configure SMTP Credentials"
+                          onMouseOver={e => e.currentTarget.style.color = 'var(--admin-primary-light)'}
+                          onMouseOut={e => e.currentTarget.style.color = '#64748b'}
+                        >
+                          ⚙️
+                        </button>
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
+                    
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* Search Bar */}
+                      <div className="gmail-search-container">
+                        <input 
+                          type="text" 
+                          placeholder="Search mail..." 
+                          value={messagesSearch}
+                          onChange={e => setMessagesSearch(e.target.value)}
+                          className="gmail-search-input"
+                        />
+                        <span className="gmail-search-icon">🔍</span>
+                      </div>
+
+                      {/* Sort Filter */}
+                      <select
+                        value={messagesSort}
+                        onChange={e => setMessagesSort(e.target.value)}
+                        className="gmail-sort-select"
+                      >
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                        <option value="name-asc">Sender (A-Z)</option>
+                        <option value="name-desc">Sender (Z-A)</option>
+                        <option value="replied-first">Replied First</option>
+                        <option value="unreplied-first">Unreplied First</option>
+                      </select>
+
+                      <span style={{ fontSize: '0.85rem', color: 'var(--admin-text-light)', fontWeight: 600 }}>
+                        {filteredMessages.length} messages
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Message Filter Tabs */}
+                  <div className="gmail-tabs">
+                    <button 
+                      className={`gmail-tab ${messagesFilterTab === 'all' ? 'active' : ''}`}
+                      onClick={() => setMessagesFilterTab('all')}
+                    >
+                      📥 All Messages
+                      <span className="gmail-tab-count">{allCount}</span>
+                    </button>
+                    <button 
+                      className={`gmail-tab ${messagesFilterTab === 'unreplied' ? 'active' : ''}`}
+                      onClick={() => setMessagesFilterTab('unreplied')}
+                    >
+                      ⏳ Pending
+                      <span className="gmail-tab-count">{unrepliedCount}</span>
+                    </button>
+                    <button 
+                      className={`gmail-tab ${messagesFilterTab === 'replied' ? 'active' : ''}`}
+                      onClick={() => setMessagesFilterTab('replied')}
+                    >
+                      ✅ Replied
+                      <span className="gmail-tab-count">{repliedCount}</span>
+                    </button>
+                  </div>
+                  
+                  <div className="gmail-list">
+                    {filteredMessages.length === 0 ? (
+                      <p className="empty-message">No messages found.</p>
+                    ) : (
+                      filteredMessages.map(m => (
+                        <div 
+                          key={m.id} 
+                          className="gmail-row" 
+                          onClick={() => setSelectedMessageId(m.id)}
+                        >
+                          <div className="gmail-row-sender">
+                            {m.name}
+                          </div>
+                          <div className="gmail-row-content">
+                            <span className="gmail-row-subject">{m.subject}</span>
+                            <span className="gmail-row-snippet">— {m.message}</span>
+                          </div>
+                          <div className="gmail-row-meta">
+                            {m.replies && m.replies.length > 0 && (
+                              <span className="gmail-badge-replied">Replied</span>
+                            )}
+                            <span className="gmail-row-date">
+                              {new Date(m.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </span>
+                            <div className="gmail-row-actions">
+                              <button 
+                                className="btn-gmail-delete" 
+                                onClick={(e) => {
+                                  e.stopPropagation(); // prevent opening details
+                                  handleDeleteMessage(m.id);
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                (() => {
+                  const m = messages.find(x => x.id === selectedMessageId);
+                  if (!m) {
+                    setSelectedMessageId(null);
+                    return null;
+                  }
+                  return (
+                    <div className="gmail-inbox-card">
+                      {/* Toolbar */}
+                      <div className="gmail-toolbar">
+                        <button 
+                          className="btn-gmail-back" 
+                          onClick={() => {
+                            setSelectedMessageId(null);
+                            setReplyingToId(null);
+                          }}
+                        >
+                          ⬅️ Back to Inbox
+                        </button>
+                        <h3 className="gmail-subject-header">{m.subject}</h3>
+                        <button 
+                          className="btn-delete" 
+                          onClick={() => {
+                            handleDeleteMessage(m.id);
+                            setSelectedMessageId(null);
+                          }}
+                        >
+                          🗑️ Delete Conversation
+                        </button>
+                      </div>
+
+                      <div className="gmail-thread-container">
+                        {/* Thread Item: Original Message */}
+                        <div className="gmail-card">
+                          <div className="gmail-card-header">
+                            <div className="gmail-card-sender">
+                              <span className="gmail-sender-name">{m.name}</span>
+                              <span className="gmail-sender-email">&lt;{m.email}&gt;</span>
+                            </div>
+                            <span className="gmail-card-date">
+                              {new Date(m.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="gmail-card-body">{m.message}</p>
+                        </div>
+
+                        {/* Thread Items: Replies */}
+                        {m.replies && m.replies.map(r => (
+                          <div key={r.id} className="gmail-card gmail-card-reply">
+                            <div className="gmail-card-header">
+                              <div className="gmail-card-sender">
+                                <span className="gmail-reply-label">Sent Reply</span>
+                                <span className="gmail-sender-name">JPCS Administrator</span>
+                                <span className="gmail-sender-email">&lt;hello@jpcs.org&gt;</span>
+                              </div>
+                              <span className="gmail-card-date">
+                                {new Date(r.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="gmail-card-body">{r.reply_body}</p>
+                          </div>
+                        ))}
+
+                        {/* inline compose reply editor at bottom */}
+                        {replyingToId === m.id ? (
+                          <div className="gmail-compose-card">
+                            <h4>Reply to {m.name}</h4>
+                            <div className="form-group">
+                              <label>Subject</label>
+                              <input 
+                                type="text" 
+                                value={replySubject} 
+                                onChange={e => setReplySubject(e.target.value)} 
+                                required 
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Message Body</label>
+                              <textarea 
+                                rows={8} 
+                                value={replyBody} 
+                                onChange={e => setReplyBody(e.target.value)} 
+                                required 
+                                placeholder="Type your email reply here..."
+                              />
+                            </div>
+                            <div className="gmail-compose-actions">
+                              <button 
+                                type="button" 
+                                className="btn-reply-cancel" 
+                                onClick={() => setReplyingToId(null)}
+                                disabled={sendingReply}
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                type="button" 
+                                className="btn-gmail-send" 
+                                onClick={() => handleSendReply(m.id)}
+                                disabled={sendingReply}
+                              >
+                                {sendingReply ? 'Sending Email...' : 'Send Reply 📤'}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '10px' }}>
+                            <button 
+                              className="btn-reply-msg" 
+                              onClick={() => handleOpenReply(m)}
+                            >
+                              ↩️ Reply to {m.name}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
+              );
+            })()
           )}
+
 
           {/* TAB: About Section */}
           {activeTab === 'about' && (
@@ -1153,7 +1640,18 @@ export default function AdminDashboard() {
                   {pillars.map(p => (
                     <div key={p.id} className="crud-item">
                       <div className="crud-item-content">
-                        <span className="crud-item-icon">{p.icon}</span>
+                        <span className="crud-item-icon">
+                          {p.icon && (p.icon.endsWith('.lottie') || p.icon.endsWith('.json')) ? (
+                            <dotlottie-wc
+                              src={p.icon}
+                              autoplay
+                              loop
+                              style={{ width: '40px', height: '40px', display: 'block' }}
+                            />
+                          ) : (
+                            p.icon
+                          )}
+                        </span>
                         <div>
                           <h4>{p.title}</h4>
                           <p>{p.desc}</p>
@@ -2008,12 +2506,12 @@ export default function AdminDashboard() {
               </div>
 
               <div className="crud-list">
-                {getFilteredCareers().length === 0 ? (
+                {filteredCareers.length === 0 ? (
                   <p className="empty-message" style={{ textAlign: 'center', color: '#64748b', padding: '24px', width: '100%' }}>
                     No career paths match your search criteria.
                   </p>
                 ) : (
-                  getFilteredCareers().map(c => (
+                  currentCareers.map(c => (
                     <div key={c.id} className="crud-item">
                       <div className="crud-item-content">
                         <span className="crud-item-icon" style={{ background: c.color + '1a', color: c.color, width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontSize: '1.5rem', flexShrink: 0 }}>
@@ -2048,6 +2546,52 @@ export default function AdminDashboard() {
                   ))
                 )}
               </div>
+
+              {totalCareersPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                  <button
+                    type="button"
+                    disabled={activeCareersPage === 1}
+                    onClick={() => setCareersPage(p => Math.max(p - 1, 1))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeCareersPage === 1 ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeCareersPage === 1 ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeCareersPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    ← Prev
+                  </button>
+                  
+                  <span style={{ fontSize: '0.88rem', color: 'var(--admin-text-light)', fontWeight: '600' }}>
+                    Page {activeCareersPage} of {totalCareersPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={activeCareersPage === totalCareersPages}
+                    onClick={() => setCareersPage(p => Math.min(p + 1, totalCareersPages))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeCareersPage === totalCareersPages ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeCareersPage === totalCareersPages ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeCareersPage === totalCareersPages ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -2215,7 +2759,320 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
-        </div>
+
+          {/* TAB: User Management */}
+          {activeTab === 'users' && currentUser?.role === 'admin' && (
+            <div className="panel-card">
+              <div className="panel-header-crud">
+                <h3>Admin User Management</h3>
+                <button className="btn-add-crud" onClick={() => {
+                  setEditItem({
+                    name: '',
+                    email: '',
+                    password: '',
+                    role: 'editor'
+                  });
+                  setModalType('user');
+                  setIsNew(true);
+                }}>+ Add Admin User</button>
+              </div>
+              <p className="panel-desc">Create and manage administrators who have access to this dashboard control panel.</p>
+
+              {/* Sub-tabs for separating Admin and Editors */}
+              <div className="gmail-tabs" style={{ marginBottom: '24px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <button 
+                  type="button"
+                  className={`gmail-tab ${userSubTab === 'all' ? 'active' : ''}`}
+                  onClick={() => setUserSubTab('all')}
+                  style={{ borderBottom: 'none' }}
+                >
+                  👥 All Users
+                  <span className="gmail-tab-count">
+                    {users.length}
+                  </span>
+                </button>
+                <button 
+                  type="button"
+                  className={`gmail-tab ${userSubTab === 'admin' ? 'active' : ''}`}
+                  onClick={() => setUserSubTab('admin')}
+                  style={{ borderBottom: 'none' }}
+                >
+                  🛡️ Admins
+                  <span className="gmail-tab-count">
+                    {users.filter(u => u.role === 'admin').length}
+                  </span>
+                </button>
+                <button 
+                  type="button"
+                  className={`gmail-tab ${userSubTab === 'editor' ? 'active' : ''}`}
+                  onClick={() => setUserSubTab('editor')}
+                  style={{ borderBottom: 'none' }}
+                >
+                  📝 Editors
+                  <span className="gmail-tab-count">
+                    {users.filter(u => u.role === 'editor').length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="crud-list">
+                {currentUsers.length === 0 ? (
+                  <p className="empty-message">No users found.</p>
+                ) : (
+                  currentUsers.map(u => (
+                    <div key={u.id} className="crud-item">
+                      <div className="crud-item-content">
+                        <span className="crud-item-icon" style={{ background: 'var(--admin-primary-light)', color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                          👤
+                        </span>
+                        <div>
+                          <h4 style={{ margin: '0 0 4px 0' }}>{u.name}</h4>
+                          <p className="item-secondary-meta" style={{ margin: '0 0 4px 0', fontSize: '0.8rem', color: 'var(--admin-text-light)' }}>
+                            Email: <strong>{u.email}</strong> | Role: <span style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 'bold',
+                              marginLeft: '4px',
+                              backgroundColor: u.role === 'admin' ? '#fee2e2' : '#f1f5f9',
+                              color: u.role === 'admin' ? '#ef4444' : '#475569',
+                              border: u.role === 'admin' ? '1px solid #fca5a5' : '1px solid #cbd5e1'
+                            }}>{u.role === 'admin' ? 'Admin' : 'Editor'}</span>
+                          </p>
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b' }}>
+                            Created: {new Date(u.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="crud-item-actions">
+                        <button className="btn-edit" onClick={() => {
+                          setEditItem({
+                            id: u.id,
+                            name: u.name,
+                            email: u.email,
+                            role: u.role || 'editor',
+                            password: ''
+                          });
+                          setModalType('user');
+                          setIsNew(false);
+                        }}>Edit</button>
+                        <button className="btn-delete" onClick={() => handleDeleteCRUD('user', u.id)}>Delete</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {totalUsersPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                  <button
+                    type="button"
+                    disabled={activeUsersPage === 1}
+                    onClick={() => setUsersPage(p => Math.max(p - 1, 1))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeUsersPage === 1 ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeUsersPage === 1 ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeUsersPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    ← Prev
+                  </button>
+                  
+                  <span style={{ fontSize: '0.88rem', color: 'var(--admin-text-light)', fontWeight: '600' }}>
+                    Page {activeUsersPage} of {totalUsersPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={activeUsersPage === totalUsersPages}
+                    onClick={() => setUsersPage(p => Math.min(p + 1, totalUsersPages))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeUsersPage === totalUsersPages ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeUsersPage === totalUsersPages ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeUsersPage === totalUsersPages ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: Login Audit Logs */}
+          {activeTab === 'logs' && currentUser?.role === 'admin' && (
+            <div className="panel-card">
+              <div className="panel-header-crud">
+                <h3>Admin Action & Activity Audit Logs</h3>
+              </div>
+              <p className="panel-desc">Track and audit all authentication settings modifications and CRUD database updates.</p>
+
+              <div style={{ overflowX: 'auto', marginTop: '16px' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '0.88rem',
+                  textAlign: 'left'
+                }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e2e8f0', color: 'var(--admin-text-light)', fontWeight: 'bold' }}>
+                      <th style={{ padding: '12px 8px' }}>User / Email</th>
+                      <th style={{ padding: '12px 8px' }}>Action</th>
+                      <th style={{ padding: '12px 8px' }}>Description</th>
+                      <th style={{ padding: '12px 8px' }}>IP Address</th>
+                      <th style={{ padding: '12px 8px' }}>Device / User Agent</th>
+                      <th style={{ padding: '12px 8px' }}>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ padding: '24px 8px', textAlign: 'center', color: '#94a3b8' }}>
+                          No activity audit logs recorded.
+                        </td>
+                      </tr>
+                    ) : (
+                      currentLogs.map(log => {
+                        const dateFormatted = new Date(log.created_at).toLocaleString(undefined, {
+                          year: 'numeric', month: 'short', day: 'numeric',
+                          hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        });
+
+                        // Dynamic badge styles
+                        let badge = { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0', label: log.action.toUpperCase() };
+                        const act = log.action || '';
+                        if (act.startsWith('create_')) {
+                          badge = { bg: '#dcfce7', color: '#15803d', border: '#bbf7d0', label: 'CREATE' };
+                        } else if (act.startsWith('update_')) {
+                          badge = { bg: '#e0e7ff', color: '#4338ca', border: '#c7d2fe', label: 'UPDATE' };
+                        } else if (act.startsWith('delete_')) {
+                          badge = { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', label: 'DELETE' };
+                        } else if (act === 'login_success') {
+                          badge = { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', label: 'LOGIN' };
+                        } else if (act === 'login_failed') {
+                          badge = { bg: '#fff1f2', color: '#e11d48', border: '#fecdd3', label: 'LOGIN FAIL' };
+                        } else if (act === 'logout_success') {
+                          badge = { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', label: 'LOGOUT' };
+                        }
+
+                        return (
+                          <tr key={log.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '12px 8px' }}>
+                              {log.user ? (
+                                <div>
+                                  <strong>{log.user.name}</strong>
+                                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{log.email}</div>
+                                </div>
+                              ) : (
+                                <span>{log.email}</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 8px' }}>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                backgroundColor: badge.bg,
+                                color: badge.color,
+                                border: `1px solid ${badge.border}`,
+                                textTransform: 'uppercase'
+                              }}>
+                                {badge.label}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 8px', color: '#334155', fontWeight: '500' }}>
+                              {log.description}
+                            </td>
+                            <td style={{ padding: '12px 8px', fontFamily: 'monospace', color: '#64748b', fontSize: '0.82rem' }}>
+                              {log.ip_address || 'Unknown'}
+                            </td>
+                            <td 
+                              style={{ 
+                                padding: '12px 8px', 
+                                color: '#64748b', 
+                                fontSize: '0.8rem', 
+                                maxWidth: '180px', 
+                                overflow: 'hidden', 
+                                textOverflow: 'ellipsis', 
+                                whiteSpace: 'nowrap' 
+                              }}
+                              title={log.user_agent}
+                            >
+                              {log.user_agent || 'Unknown'}
+                            </td>
+                            <td style={{ padding: '12px 8px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                              {dateFormatted}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalLogsPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '24px' }}>
+                  <button
+                    type="button"
+                    disabled={activeLogsPage === 1}
+                    onClick={() => setLogsPage(p => Math.max(p - 1, 1))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeLogsPage === 1 ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeLogsPage === 1 ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeLogsPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    ← Prev
+                  </button>
+                  
+                  <span style={{ fontSize: '0.88rem', color: 'var(--admin-text-light)', fontWeight: '600' }}>
+                    Page {activeLogsPage} of {totalLogsPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={activeLogsPage === totalLogsPages}
+                    onClick={() => setLogsPage(p => Math.min(p + 1, totalLogsPages))}
+                    style={{
+                      padding: '8px 16px',
+                      background: activeLogsPage === totalLogsPages ? '#e2e8f0' : 'var(--admin-primary-light)',
+                      color: activeLogsPage === totalLogsPages ? '#94a3b8' : 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '0.82rem',
+                      cursor: activeLogsPage === totalLogsPages ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
       </main>
 
       {/* CRUD Edit Dialog Modal */}
@@ -2229,10 +3086,95 @@ export default function AdminDashboard() {
               {/* PILLAR FIELDS */}
               {modalType === 'pillar' && (
                 <>
-                  <div className="form-group">
-                    <label>Pillar Icon (Emoji or Char)</label>
-                    <input type="text" value={editItem.icon} onChange={e => setEditItem({...editItem, icon: e.target.value})} required />
+                  <div className="form-row">
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Pillar Icon (Emoji or path)</label>
+                      <input 
+                        type="text" 
+                        value={editItem.icon} 
+                        onChange={e => setEditItem({...editItem, icon: e.target.value})} 
+                        required 
+                        placeholder="e.g. 💡 or /images/lottie/...lottie"
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Upload Lottie Animation (.lottie/.json)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="file"
+                          accept=".lottie,.json"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            if (file.size > 5 * 1024 * 1024) {
+                              setError('File size must be less than 5MB.');
+                              return;
+                            }
+                            const formData = new FormData();
+                            formData.append('lottie', file);
+                            setLoading(true);
+                            setError('');
+                            axios.post('/api/pillars/upload-lottie', formData, {
+                              headers: { 'Content-Type': 'multipart/form-data' }
+                            })
+                            .then(res => {
+                              if (res.data.success) {
+                                setEditItem(prev => ({ ...prev, icon: res.data.path }));
+                                flashSuccess('Lottie file uploaded.');
+                              }
+                            })
+                            .catch(err => setError(err.response?.data?.message || 'Upload failed.'))
+                            .finally(() => setLoading(false));
+                          }}
+                          style={{ fontSize: '0.85rem' }}
+                        />
+                        {editItem.icon && (editItem.icon.endsWith('.lottie') || editItem.icon.endsWith('.json')) && (
+                          <button
+                            type="button"
+                            onClick={() => setEditItem(prev => ({ ...prev, icon: '💡' }))}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#fef2f2',
+                              color: '#dc2626',
+                              border: '1px solid #fca5a5',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: '700',
+                              fontSize: '0.75rem',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            ❌ Reset to Emoji
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
+                  {editItem.icon && (editItem.icon.endsWith('.lottie') || editItem.icon.endsWith('.json')) && (
+                    <div className="form-group">
+                      <label>Lottie Live Preview</label>
+                      <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '8px',
+                        border: '2px dashed #cbd5e1',
+                        background: '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden'
+                      }}>
+                        <dotlottie-wc
+                          src={editItem.icon}
+                          autoplay
+                          loop
+                          style={{ width: '48px', height: '48px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="form-group">
                     <label>Title</label>
                     <input type="text" value={editItem.title} onChange={e => setEditItem({...editItem, title: e.target.value})} required />
@@ -2724,9 +3666,95 @@ export default function AdminDashboard() {
                       <input type="text" value={editItem.icon || ''} onChange={e => setEditItem({...editItem, icon: e.target.value})} required style={{ textAlign: 'center', fontSize: '1.25rem' }} />
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label>Tags (Comma-separated, e.g., Backend, Frontend, Full-Stack)</label>
-                    <input type="text" value={editItem.tags || ''} onChange={e => setEditItem({...editItem, tags: e.target.value})} placeholder="Backend, Full-Stack" required />
+                   <div className="form-group">
+                    <label>Tags (Select from dropdown to add, or type custom tags)</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <select 
+                        style={{ flex: '1', padding: '10px' }}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val) {
+                            const tagsArr = (editItem.tags || '')
+                              .split(',')
+                              .map(t => t.trim())
+                              .filter(Boolean);
+                            if (!tagsArr.some(t => t.toLowerCase() === val.toLowerCase())) {
+                              tagsArr.push(val);
+                              setEditItem({ ...editItem, tags: tagsArr.join(', ') });
+                            }
+                            e.target.value = ''; // Reset select
+                          }
+                        }}
+                      >
+                        <option value="">-- Choose predefined tag to add --</option>
+                        <option value="Backend">Backend</option>
+                        <option value="Frontend">Frontend</option>
+                        <option value="Full-Stack">Full-Stack</option>
+                        <option value="Data">Data</option>
+                        <option value="AI">AI</option>
+                        <option value="Security">Security</option>
+                        <option value="Design">Design</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Mobile">Mobile</option>
+                      </select>
+                    </div>
+                    
+                    {editItem.tags && (
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                        {editItem.tags
+                          .split(',')
+                          .map(t => t.trim())
+                          .filter(Boolean)
+                          .map(tag => (
+                            <span 
+                              key={tag} 
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                backgroundColor: '#f1f5f9',
+                                color: '#334155',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '4px',
+                                padding: '2px 8px',
+                                fontSize: '0.75rem',
+                                fontWeight: '600'
+                              }}
+                            >
+                              {tag}
+                              <button 
+                                type="button"
+                                style={{ 
+                                  border: 'none', 
+                                  background: 'none', 
+                                  cursor: 'pointer', 
+                                  color: '#ef4444', 
+                                  padding: '0 2px',
+                                  fontSize: '0.85rem',
+                                  lineHeight: 1
+                                }}
+                                onClick={() => {
+                                  const tagsArr = editItem.tags
+                                    .split(',')
+                                    .map(t => t.trim())
+                                    .filter(t => t.toLowerCase() !== tag.toLowerCase());
+                                  setEditItem({ ...editItem, tags: tagsArr.join(', ') });
+                                }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                      </div>
+                    )}
+
+                    <input 
+                      type="text" 
+                      value={editItem.tags || ''} 
+                      onChange={e => setEditItem({...editItem, tags: e.target.value})} 
+                      placeholder="Backend, Frontend, etc. (separated by commas or type custom tags)" 
+                      required 
+                    />
                   </div>
                   <div className="form-group">
                     <label>Description</label>
@@ -2899,11 +3927,183 @@ export default function AdminDashboard() {
                 </>
               )}
 
+              {/* USER FIELDS */}
+              {modalType === 'user' && (
+                <>
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input type="text" value={editItem.name || ''} onChange={e => setEditItem({...editItem, name: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Email Address</label>
+                    <input type="email" value={editItem.email || ''} onChange={e => setEditItem({...editItem, email: e.target.value})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Role</label>
+                    <select 
+                      value={editItem.role || 'editor'} 
+                      onChange={e => setEditItem({...editItem, role: e.target.value})} 
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      <option value="admin">Admin</option>
+                      <option value="editor">Editor</option>
+                    </select>
+                  </div>
+                  {!isNew ? (
+                    <div className="form-group">
+                      <label>Password (Optional)</label>
+                      <input 
+                        type="password" 
+                        value={editItem.password || ''} 
+                        onChange={e => setEditItem({...editItem, password: e.target.value})} 
+                        placeholder="Leave blank to keep current password" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="form-group" style={{ marginTop: '6px' }}>
+                      <label>Password</label>
+                      <div style={{
+                        padding: '12px',
+                        backgroundColor: '#f0fdf4',
+                        border: '1.5px dashed #bbf7d0',
+                        borderRadius: '6px',
+                        color: '#15803d',
+                        fontSize: '0.88rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        🔑 Auto-generated (12 chars) & sent to email.
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="modal-actions">
                 <button type="submit" disabled={loading} className="btn-modal-save">
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button type="button" className="btn-modal-cancel" onClick={() => setEditItem(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SMTP Credentials Modal */}
+      {showSmtpModal && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal-box">
+            <h3>⚙️ Configure SMTP Settings</h3>
+            <form onSubmit={handleSaveSmtpSettings} className="admin-form">
+              {error && <div className="admin-error-box">{error}</div>}
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mail Mailer</label>
+                  <select 
+                    value={smtpSettings.mail_mailer} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_mailer: e.target.value})} 
+                    required
+                  >
+                    <option value="smtp">SMTP (Actual Sending)</option>
+                    <option value="log">Log (Local Dev Logging)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Mail Encryption</label>
+                  <select 
+                    value={smtpSettings.mail_encryption || ''} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_encryption: e.target.value})}
+                  >
+                    <option value="">None</option>
+                    <option value="tls">TLS</option>
+                    <option value="ssl">SSL</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mail Host</label>
+                  <input 
+                    type="text" 
+                    value={smtpSettings.mail_host} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_host: e.target.value})} 
+                    required 
+                    placeholder="e.g. smtp.gmail.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mail Port</label>
+                  <input 
+                    type="number" 
+                    value={smtpSettings.mail_port} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_port: parseInt(e.target.value) || 587})} 
+                    required 
+                    placeholder="e.g. 587 or 465"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Username (Email)</label>
+                  <input 
+                    type="text" 
+                    value={smtpSettings.mail_username || ''} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_username: e.target.value})} 
+                    placeholder="e.g. sender@gmail.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Password (or App Password)</label>
+                  <input 
+                    type="password" 
+                    value={smtpSettings.mail_password || ''} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_password: e.target.value})} 
+                    placeholder="••••••••••••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Mail From Address</label>
+                  <input 
+                    type="email" 
+                    value={smtpSettings.mail_from_address} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_from_address: e.target.value})} 
+                    required 
+                    placeholder="e.g. hello@jpcs.org"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Sender From Name</label>
+                  <input 
+                    type="text" 
+                    value={smtpSettings.mail_from_name} 
+                    onChange={e => setSmtpSettings({...smtpSettings, mail_from_name: e.target.value})} 
+                    required 
+                    placeholder="e.g. JPCS Administrator"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="submit" disabled={loading} className="btn-modal-save">
+                  {loading ? 'Saving...' : 'Save Environment Settings'}
+                </button>
+                <button type="button" className="btn-modal-cancel" onClick={() => setShowSmtpModal(false)}>Cancel</button>
               </div>
             </form>
           </div>

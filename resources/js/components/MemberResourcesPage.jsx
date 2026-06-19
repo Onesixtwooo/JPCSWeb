@@ -124,6 +124,7 @@ export default function MemberResourcesPage() {
             <a href="/about" className="resourcespage__nav-link">About</a>
             <a href="/news" className="resourcespage__nav-link">News</a>
             <a href="/career" className="resourcespage__nav-link">Careers</a>
+            <a href="/career#alumni" className="resourcespage__nav-link">Alumni</a>
           </div>
           <a href="/" className="resourcespage__back-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

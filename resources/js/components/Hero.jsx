@@ -210,14 +210,6 @@ export default function Hero({ brandName, brandSubtext, brandLogo, heroSettings 
           ))}
         </div>
       </div>
-
-      {/* Scroll indicator */}
-      <div className="hero__scroll">
-        <span>Scroll Down</span>
-        <div className="hero__scroll-mouse">
-          <div className="hero__scroll-wheel" />
-        </div>
-      </div>
     </section>
   );
 }

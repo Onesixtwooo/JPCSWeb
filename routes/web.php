@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/about/upload-image', [AdminController::class, 'uploadAboutImage']);
     Route::post('/api/contact-settings', [AdminController::class, 'updateContactSettings']);
 
+    Route::post('/api/pillars/upload-lottie', [AdminController::class, 'uploadPillarLottie']);
     Route::post('/api/pillars', [AdminController::class, 'createPillar']);
     Route::put('/api/pillars/{id}', [AdminController::class, 'updatePillar']);
     Route::delete('/api/pillars/{id}', [AdminController::class, 'deletePillar']);
@@ -93,6 +94,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/api/contact-messages', [AdminController::class, 'getContactMessages']);
     Route::delete('/api/contact-messages/{id}', [AdminController::class, 'deleteContactMessage']);
+    Route::post('/api/contact-messages/{id}/reply', [AdminController::class, 'replyContactMessage']);
 
     Route::post('/api/faqs', [AdminController::class, 'createFaq']);
     Route::put('/api/faqs/{id}', [AdminController::class, 'updateFaq']);
@@ -111,4 +113,17 @@ Route::middleware('auth')->group(function () {
     Route::delete('/api/alumni-testimonials/{id}', [AdminController::class, 'deleteAlumniTestimonial']);
     Route::post('/api/alumni-testimonials/upload-avatar', [AdminController::class, 'uploadAlumniAvatar']);
     Route::post('/api/alumni-share-link', [AdminController::class, 'updateAlumniShareLink']);
+    
+    // SMTP Credentials / ENV Settings
+    Route::get('/api/smtp-settings', [AdminController::class, 'getSmtpSettings']);
+    Route::post('/api/smtp-settings', [AdminController::class, 'updateSmtpSettings']);
+
+    // User Management CRUD
+    Route::get('/api/users', [AdminController::class, 'getUsers']);
+    Route::post('/api/users', [AdminController::class, 'createUser']);
+    Route::put('/api/users/{id}', [AdminController::class, 'updateUser']);
+    Route::delete('/api/users/{id}', [AdminController::class, 'deleteUser']);
+
+    // Audit Login Logs
+    Route::get('/api/audit-logs', [AdminController::class, 'getLoginLogs']);
 });

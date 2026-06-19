@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import CanvasLines from './CanvasLines';
 import './About.css';
+
+const getPillarClass = (title = '', icon = '') => {
+  const t = title.toLowerCase();
+  if (icon === '💡' || t.includes('innovat')) return 'innovation';
+  if (icon === '🤝' || t.includes('collab')) return 'collaboration';
+  if (icon === '📚' || t.includes('excel')) return 'excellence';
+  if (icon === '🌱' || t.includes('grow')) return 'growth';
+  return 'default';
+};
 
 const PILLARS = [
   {
@@ -73,6 +82,115 @@ function AnimatedCounter({ value }) {
   }, [value]);
 
   return <>{count}{suffix}</>;
+}
+
+function ParticleCanvas({ color, lineColor, count = 25 }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let isVisible = false;
+
+    const parent = canvas.parentElement;
+    let w = canvas.width = parent ? parent.clientWidth : 300;
+    let h = canvas.height = parent ? parent.clientHeight : 200;
+
+    let dots = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 2 + 0.5,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4,
+      opacity: Math.random() * 0.5 + 0.2,
+    }));
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        w = canvas.width = width;
+        h = canvas.height = height;
+        dots.forEach(d => {
+          if (d.x > w) d.x = Math.random() * w;
+          if (d.y > h) d.y = Math.random() * h;
+        });
+      }
+    });
+
+    if (parent) {
+      resizeObserver.observe(parent);
+    }
+
+    const draw = () => {
+      if (!isVisible) return;
+      ctx.clearRect(0, 0, w, h);
+
+      dots.forEach(d => {
+        d.x += d.dx;
+        d.y += d.dy;
+        if (d.x < 0 || d.x > w) d.dx *= -1;
+        if (d.y < 0 || d.y > h) d.dy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+
+      dots.forEach((a, i) => {
+        dots.slice(i + 1).forEach(b => {
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          if (dist < 80) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        });
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    const intersectionObserver = new IntersectionObserver((entries) => {
+      for (let entry of entries) {
+        isVisible = entry.isIntersecting;
+        if (isVisible) {
+          cancelAnimationFrame(animationFrameId);
+          draw();
+        } else {
+          cancelAnimationFrame(animationFrameId);
+        }
+      }
+    }, { threshold: 0.01 });
+
+    intersectionObserver.observe(canvas);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+    };
+  }, [color, lineColor, count]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    />
+  );
 }
 
 export default function About() {
@@ -190,14 +308,18 @@ export default function About() {
         {/* Mission & Vision */}
         <div className="about__mv">
           <div className="about__mv-card about__mv-card--mission">
-            <div className="about__mv-icon">🎯</div>
-            <h3>Our Mission</h3>
-            <p>{mission}</p>
+            <ParticleCanvas color="rgba(255, 255, 255, 0.25)" lineColor="rgba(255, 255, 255, 0.12)" count={25} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3>Our Mission</h3>
+              <p>{mission}</p>
+            </div>
           </div>
           <div className="about__mv-card about__mv-card--vision">
-            <div className="about__mv-icon">🔭</div>
-            <h3>Our Vision</h3>
-            <p>{vision}</p>
+            <ParticleCanvas color="rgba(34, 132, 59, 0.2)" lineColor="rgba(34, 132, 59, 0.1)" count={25} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3>Our Vision</h3>
+              <p>{vision}</p>
+            </div>
           </div>
         </div>
 
@@ -205,7 +327,51 @@ export default function About() {
         <div className="about__pillars">
           {pillarsList.map(p => (
             <div key={p.title} className="about__pillar">
-              <div className="about__pillar-icon">{p.icon}</div>
+              <div className={`about__pillar-icon about__pillar-icon--${getPillarClass(p.title, p.icon)}`}>
+                {p.icon && (p.icon.endsWith('.lottie') || p.icon.endsWith('.json')) ? (
+                  <dotlottie-wc 
+                    src={p.icon} 
+                    autoplay 
+                    loop 
+                    play-on-hover 
+                    style={{ width: '80px', height: '80px', display: 'block', margin: '0 auto' }}
+                  />
+                ) : getPillarClass(p.title, p.icon) === 'innovation' ? (
+                  <dotlottie-wc 
+                    src="/images/lottie/Light%20Bulb.lottie" 
+                    autoplay 
+                    loop 
+                    play-on-hover 
+                    style={{ width: '80px', height: '80px', display: 'block', margin: '0 auto' }}
+                  />
+                ) : getPillarClass(p.title, p.icon) === 'collaboration' ? (
+                  <dotlottie-wc 
+                    src="/images/lottie/Welcome.lottie" 
+                    autoplay 
+                    loop 
+                    play-on-hover 
+                    style={{ width: '80px', height: '80px', display: 'block', margin: '0 auto' }}
+                  />
+                ) : getPillarClass(p.title, p.icon) === 'excellence' ? (
+                  <dotlottie-wc 
+                    src="/images/lottie/trophy.lottie" 
+                    autoplay 
+                    loop 
+                    play-on-hover 
+                    style={{ width: '80px', height: '80px', display: 'block', margin: '0 auto' }}
+                  />
+                ) : getPillarClass(p.title, p.icon) === 'growth' ? (
+                  <dotlottie-wc 
+                    src="/images/lottie/Rocket%20Launch.lottie" 
+                    autoplay 
+                    loop 
+                    play-on-hover 
+                    style={{ width: '80px', height: '80px', display: 'block', margin: '0 auto' }}
+                  />
+                ) : (
+                  p.icon
+                )}
+              </div>
               <h4 className="about__pillar-title">{p.title}</h4>
               <p className="about__pillar-desc">{p.desc}</p>
             </div>

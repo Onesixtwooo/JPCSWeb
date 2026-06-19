@@ -10,4 +10,9 @@ class ContactMessage extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'email', 'subject', 'message'];
+
+    public function replies()
+    {
+        return $this->hasMany(ContactMessageReply::class);
+    }
 }

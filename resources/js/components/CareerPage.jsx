@@ -23,6 +23,7 @@ export default function CareerPage() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [expandedCard, setExpandedCard] = useState(null);
   const [currentAlumniPage, setCurrentAlumniPage] = useState(1);
+  const [currentCareersPage, setCurrentCareersPage] = useState(1);
   const [shareLink, setShareLink] = useState('/#contact');
   const [copiedAlumnus, setCopiedAlumnus] = useState(null);
 
@@ -56,6 +57,20 @@ export default function CareerPage() {
   }, []);
 
   useEffect(() => {
+    if (loading) return;
+    
+    const hash = window.location.hash;
+    if (hash === '#alumni') {
+      setTimeout(() => {
+        const element = document.getElementById('alumni');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, [loading]);
+
+  useEffect(() => {
     if (loading || alumni.length === 0) return;
     
     const hash = window.location.hash;
@@ -82,6 +97,10 @@ export default function CareerPage() {
       }
     }
   }, [loading, alumni]);
+
+  useEffect(() => {
+    setCurrentCareersPage(1);
+  }, [activeFilter]);
 
   const handleShare = (alumnus) => {
     const slug = encodeURIComponent(alumnus.name.toLowerCase().replace(/\s+/g, '-'));
@@ -140,6 +159,12 @@ export default function CareerPage() {
     ? careers
     : careers.filter(c => c.tags && c.tags.includes(activeFilter));
 
+  const careersPerPage = 9;
+  const indexOfLastCareer = currentCareersPage * careersPerPage;
+  const indexOfFirstCareer = indexOfLastCareer - careersPerPage;
+  const totalCareersPages = Math.ceil(filtered.length / careersPerPage);
+  const currentCareers = filtered.slice(indexOfFirstCareer, indexOfLastCareer);
+
   if (loading) {
     return (
       <div className="careerpage-loader-container">
@@ -173,6 +198,10 @@ export default function CareerPage() {
             <a href="/" className="careerpage__nav-link">Home</a>
             <a href="/about" className="careerpage__nav-link">About</a>
             <a href="/news" className="careerpage__nav-link">News</a>
+            <a href="#alumni" className="careerpage__nav-link" onClick={e => {
+              e.preventDefault();
+              document.getElementById('alumni')?.scrollIntoView({ behavior: 'smooth' });
+            }}>Alumni</a>
           </div>
           <a href="/" className="careerpage__back-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -204,11 +233,11 @@ export default function CareerPage() {
           </p>
           <div className="careerpage__hero-stats">
             <div className="careerpage__hero-stat">
-              <span className="careerpage__hero-stat-num">12+</span>
+              <span className="careerpage__hero-stat-num">{careers.length}</span>
               <span className="careerpage__hero-stat-label">IT Career Paths</span>
             </div>
             <div className="careerpage__hero-stat">
-              <span className="careerpage__hero-stat-num">6</span>
+              <span className="careerpage__hero-stat-num">{alumni.length}</span>
               <span className="careerpage__hero-stat-label">Alumni Stories</span>
             </div>
             <div className="careerpage__hero-stat">
@@ -250,7 +279,7 @@ export default function CareerPage() {
 
           {/* Career Grid */}
           <div className="careerpage__grid">
-            {filtered.map((c, i) => (
+            {currentCareers.map((c, i) => (
               <div
                 key={c.title}
                 className={`career-card ${expandedCard === c.title ? 'career-card--expanded' : ''}`}
@@ -295,11 +324,51 @@ export default function CareerPage() {
               </div>
             ))}
           </div>
+
+          {totalCareersPages > 1 && (
+            <div className="careerpage__pagination" style={{ marginTop: '40px' }}>
+              <button
+                disabled={currentCareersPage === 1}
+                onClick={() => {
+                  setCurrentCareersPage(p => Math.max(p - 1, 1));
+                  document.querySelector('.careerpage__careers')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="careerpage__page-arrow"
+              >
+                ← Prev
+              </button>
+              {[...Array(totalCareersPages)].map((_, idx) => {
+                const pageNum = idx + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => {
+                      setCurrentCareersPage(pageNum);
+                      document.querySelector('.careerpage__careers')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`careerpage__page-num ${currentCareersPage === pageNum ? 'active' : ''}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                disabled={currentCareersPage === totalCareersPages}
+                onClick={() => {
+                  setCurrentCareersPage(p => Math.min(p + 1, totalCareersPages));
+                  document.querySelector('.careerpage__careers')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="careerpage__page-arrow"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── Alumni Board ── */}
-      <section className="careerpage__alumni">
+      <section id="alumni" className="careerpage__alumni">
         <div className="careerpage__alumni-bg" />
         <div className="container">
           <div className="careerpage__section-header">

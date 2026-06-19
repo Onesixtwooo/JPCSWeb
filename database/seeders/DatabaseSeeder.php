@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'JPCS Administrator',
                 'password' => Hash::make('JPCS@On3S1xTw0'),
+                'role' => 'admin',
             ]
         );
 
