@@ -13,7 +13,7 @@ export default function Login() {
     axios.get('/api/auth/check')
       .then(res => {
         if (res.data.authenticated) {
-          window.location.href = '/admin';
+          window.location.replace('/admin');
         }
       });
   }, []);
@@ -26,7 +26,7 @@ export default function Login() {
     axios.post('/api/login', { email, password })
       .then(res => {
         if (res.data.success) {
-          window.location.href = '/admin';
+          window.location.replace('/admin');
         } else {
           setError(res.data.message);
         }

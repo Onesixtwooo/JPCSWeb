@@ -13,6 +13,9 @@ Route::get('/admin/{any?}', function () {
 })->where('any', '.*');
 
 Route::get('/login', function () {
+    if (\Illuminate\Support\Facades\Auth::check()) {
+        return redirect('/admin');
+    }
     return view('welcome');
 });
 

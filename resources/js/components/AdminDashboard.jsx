@@ -204,12 +204,12 @@ export default function AdminDashboard() {
           setCurrentUser(res.data.user);
           axios.get('/api/about').then(aboutRes => setAboutSettings(aboutRes.data));
         } else {
-          window.location.href = '/login';
+          window.location.replace('/login');
         }
       })
       .catch(() => {
         setIsAuthenticated(false);
-        window.location.href = '/login';
+        window.location.replace('/login');
       });
   }, []);
 
@@ -221,11 +221,38 @@ export default function AdminDashboard() {
     setLogsPage(1);
     setUsersPage(1);
     setUserSubTab('all');
+    if (window.location.hash.startsWith('#message-')) {
+      window.history.pushState(null, '', window.location.pathname);
+    }
   }, [activeTab]);
 
   useEffect(() => {
     setUsersPage(1);
   }, [userSubTab]);
+
+  // Handle popstate for messages routing
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#message-')) {
+        const messageId = parseInt(hash.replace('#message-', ''), 10);
+        if (!isNaN(messageId)) {
+          setSelectedMessageId(messageId);
+        }
+      } else {
+        setSelectedMessageId(null);
+        setReplyingToId(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    if (isAuthenticated) {
+      handlePopState();
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAuthenticated]);
 
   // Fetch data depending on active tab when authenticated
   useEffect(() => {
@@ -262,6 +289,21 @@ export default function AdminDashboard() {
       axios.get('/api/audit-logs').then(res => setLoginLogs(res.data));
     }
   }, [isAuthenticated, activeTab]);
+
+  const handleOpenMessage = (id) => {
+    setSelectedMessageId(id);
+    window.history.pushState({ type: 'view_message', messageId: id }, '', `#message-${id}`);
+  };
+
+  const handleBackToInbox = () => {
+    if (window.location.hash.startsWith('#message-')) {
+      window.history.back();
+    } else {
+      setSelectedMessageId(null);
+      setReplyingToId(null);
+      window.history.pushState(null, '', window.location.pathname);
+    }
+  };
 
   // Logout handler
   const handleLogout = () => {
@@ -1114,7 +1156,7 @@ export default function AdminDashboard() {
                         <div 
                           key={m.id} 
                           className="gmail-row" 
-                          onClick={() => setSelectedMessageId(m.id)}
+                          onClick={() => handleOpenMessage(m.id)}
                         >
                           <div className="gmail-row-sender">
                             {m.name}
@@ -1160,10 +1202,7 @@ export default function AdminDashboard() {
                       <div className="gmail-toolbar">
                         <button 
                           className="btn-gmail-back" 
-                          onClick={() => {
-                            setSelectedMessageId(null);
-                            setReplyingToId(null);
-                          }}
+                          onClick={handleBackToInbox}
                         >
                           ⬅️ Back to Inbox
                         </button>
@@ -1173,6 +1212,7 @@ export default function AdminDashboard() {
                           onClick={() => {
                             handleDeleteMessage(m.id);
                             setSelectedMessageId(null);
+                            window.history.pushState(null, '', window.location.pathname);
                           }}
                         >
                           🗑️ Delete Conversation
