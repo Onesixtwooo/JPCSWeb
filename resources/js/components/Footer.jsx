@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Footer.css';
 
 const LINKS = {
@@ -26,22 +26,43 @@ const LINKS = {
 
 const scroll = href => document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
 
-export default function Footer({ brandName }) {
+export default function Footer({ brandName, brandLogo }) {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [brandLogo]);
+
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer__top">
           {/* Brand */}
           <div className="footer__brand">
-            <div className="footer__brand-logos">
-              <div className="footer__brand-circle jpcs">{brandName ? brandName.split('-')[0] : 'JPCS'}</div>
+            {/* School Logo & Link (OLSHCo) at the top */}
+            <div className="footer__school">
+              <a href="https://olshco.lamparasystem.com/" target="_blank" rel="noopener noreferrer" className="footer__school-link">
+                <img src="/images/olshco.png" alt="OLSHCo Logo" className="footer__school-logo" />
+                <span className="footer__school-name">Our Lady of the Sacred Heart College of Guimba, Inc.</span>
+              </a>
             </div>
-            <h3 className="footer__brand-name">{brandName || 'JPCS-OLSHCo'}</h3>
-            <p className="footer__brand-desc">
-              Junior Philippine Computer Society — {brandName ? brandName.split('-')[1] || 'OLSHCo' : 'OLSHCo'} Chapter
-            </p>
-            <p className="footer__motto">"Ex fide ad futurum"</p>
-            <p className="footer__tagline">Build Dreams, Code Future.</p>
+
+            {/* JPCS Logo & Info at the bottom */}
+            <div className="footer__jpcs-section">
+              <div className="footer__brand-logos">
+                {brandLogo && !imgError ? (
+                  <img src={brandLogo} alt="Logo" className="footer__logo-img" onError={() => setImgError(true)} />
+                ) : (
+                  <div className="footer__brand-circle jpcs">{brandName ? brandName.split('-')[0] : 'JPCS'}</div>
+                )}
+              </div>
+              <h3 className="footer__brand-name">{brandName || 'JPCS-OLSHCo'}</h3>
+              <p className="footer__brand-desc">
+                Junior Philippine Computer Society — {brandName ? brandName.split('-')[1] || 'OLSHCo' : 'OLSHCo'} Chapter
+              </p>
+              <p className="footer__motto">"Ex fide ad futurum"</p>
+              <p className="footer__tagline">Build Dreams, Code Future.</p>
+            </div>
           </div>
 
           {/* Link columns */}

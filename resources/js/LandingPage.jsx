@@ -81,7 +81,7 @@ export default function LandingPage() {
         <Others  />
         <Contact />
       </main>
-      <Footer brandName={brandSettings.brand_name} />
+      <Footer brandName={brandSettings.brand_name} brandLogo={brandSettings.brand_logo} />
     </>
   );
 }

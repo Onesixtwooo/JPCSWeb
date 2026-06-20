@@ -112,6 +112,56 @@
   gap: 8px;
 }
 
+.footer__logo-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.footer__school {
+  margin-bottom: 24px;
+  max-width: 280px;
+}
+
+.footer__jpcs-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+}
+
+.footer__school-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.footer__school-link:hover {
+  color: var(--green-300);
+}
+
+.footer__school-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.footer__school-name {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  transition: color 0.2s;
+}
+
+.footer__school-link:hover .footer__school-name {
+  color: var(--green-300);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .footer__top { grid-template-columns: 1fr 1fr; }
