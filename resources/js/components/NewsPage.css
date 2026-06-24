@@ -399,6 +399,106 @@
   margin-top: auto;
 }
 
+/* ===== COMPACT NEWS LIST ===== */
+.newspage__grid {
+  grid-template-columns: 1fr;
+  gap: 24px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.newspage__card-link {
+  display: block;
+}
+
+.newspage__card {
+  min-height: 210px;
+  padding: 8px;
+  gap: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--gray-200);
+  box-shadow: none;
+}
+
+.newspage__card:hover {
+  transform: none;
+  border-color: var(--green-400);
+  box-shadow: 0 8px 24px rgba(21, 128, 61, 0.08);
+}
+
+.newspage__card-image {
+  width: 310px;
+  min-width: 310px;
+  min-height: 192px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-50);
+  color: var(--green-800);
+  font-size: 2.25rem;
+}
+
+.newspage__card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.newspage__card-emoji,
+.newspage__card-meta .newspage__cat,
+.newspage__card-read {
+  display: none;
+}
+
+.newspage__card-body {
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 8px 8px 0;
+}
+
+.newspage__card-meta {
+  order: 1;
+}
+
+.newspage__card-title {
+  order: 0;
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--green-800);
+}
+
+.newspage__card-excerpt {
+  order: 2;
+  display: block;
+  overflow: visible;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--gray-600);
+}
+
+.newspage__card-meta .newspage__date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-700);
+  font-size: 0.92rem;
+}
+
+.newspage__card-meta .newspage__date::before {
+  content: '▣';
+  font-size: 0.85rem;
+}
+
+.newspage__card-more {
+  order: 3;
+  color: var(--green-700);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 /* ===== FOOTER ===== */
 .newspage__footer {
   background: var(--green-900);
@@ -466,12 +566,37 @@
   .newspage__nav-sub {
     display: none;
   }
+
+  .newspage__card {
+    gap: 16px;
+  }
+
+  .newspage__card-image {
+    width: 220px;
+    min-width: 220px;
+    min-height: 150px;
+  }
 }
 
 @media (max-width: 480px) {
   .newspage__card {
     flex-direction: column;
     gap: 12px;
+    padding: 8px;
+  }
+
+  .newspage__card-image {
+    width: 100%;
+    min-width: 0;
+    min-height: 190px;
+  }
+
+  .newspage__card-body {
+    padding: 8px;
+  }
+
+  .newspage__card-title {
+    font-size: 1.2rem;
   }
 
   .newspage__card-emoji {

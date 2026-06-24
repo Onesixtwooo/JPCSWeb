@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import './Teams.css';
 
@@ -61,7 +62,7 @@ const renderIcon = (iconName) => {
   switch (iconName) {
     case 'code-laptop':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
           <line x1="12" y1="17" x2="12" y2="21"></line>
@@ -70,7 +71,7 @@ const renderIcon = (iconName) => {
       );
     case 'shield-lock':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           <rect x="9" y="11" width="6" height="5" rx="1"></rect>
           <path d="M10.5 11V9a1.5 1.5 0 0 1 3 0v2"></path>
@@ -78,13 +79,13 @@ const renderIcon = (iconName) => {
       );
     case 'magic-wand':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="m15 4-2 2M19.07 4.93l-1.41 1.41M20 9h-2M19.07 13.07l-1.41-1.41M15 14l-2-2M2 22l9-9M19 2l-3 3 1.5 1.5L20.5 5 19 2z"></path>
         </svg>
       );
     case 'server-racks':
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
           <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
           <line x1="6" y1="6" x2="6.01" y2="6"></line>
@@ -95,7 +96,7 @@ const renderIcon = (iconName) => {
       );
     default:
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
         </svg>
       );
@@ -104,6 +105,7 @@ const renderIcon = (iconName) => {
 
 export default function Teams() {
   const [teamsList, setTeamsList] = useState(DEFAULT_TEAMS);
+  const [lightbox, setLightbox] = useState(null); // { src, alt, caption }
 
   useEffect(() => {
     axios.get('/api/teams')
@@ -113,7 +115,15 @@ export default function Teams() {
       .catch(() => {});
   }, []);
 
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setLightbox(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
+    <>
     <section id="teams" className="teams-section">
       <div className="container">
         <div className="teams-section__title-container">
@@ -132,7 +142,14 @@ export default function Teams() {
                 <div className="team-card-enverga__header">
                   <div className="team-card-enverga__icon-wrapper">
                     {team.icon && team.icon.startsWith('/') ? (
-                      <img src={team.icon} alt={team.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <img 
+                        src={team.icon} 
+                        alt={team.name} 
+                        className="about__img-clickable"
+                        style={{ width: '68px', height: '68px', objectFit: 'contain', borderRadius: '8px' }} 
+                        onClick={() => setLightbox({ src: team.icon, alt: team.name, caption: `${team.name} — ${team.tagline}` })}
+                        title="Click to enlarge"
+                      />
                     ) : (
                       renderIcon(team.icon)
                     )}
@@ -182,5 +199,32 @@ export default function Teams() {
         </div>
       </div>
     </section>
+
+    {/* Lightbox — portaled to document.body to escape stacking contexts */}
+    {lightbox && ReactDOM.createPortal(
+      <div
+        className="about__lightbox-backdrop"
+        onClick={() => setLightbox(null)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Image preview"
+      >
+        <div className="about__lightbox-inner" onClick={e => e.stopPropagation()}>
+          <button
+            className="about__lightbox-close"
+            onClick={() => setLightbox(null)}
+            aria-label="Close image preview"
+          >
+            ✕
+          </button>
+          <img src={lightbox.src} alt={lightbox.alt} className="about__lightbox-img" />
+          {lightbox.caption && (
+            <p className="about__lightbox-caption">{lightbox.caption}</p>
+          )}
+        </div>
+      </div>,
+      document.body
+    )}
+    </>
   );
 }

@@ -517,6 +517,38 @@ class AdminController extends Controller
         abort(404, 'News article not found');
     }
 
+    /**
+     * Keep the formatting produced by the news editor while discarding markup
+     * that could execute script in the public article view.
+     */
+    private function sanitizeNewsContent(?string $content): ?string
+    {
+        if ($content === null || $content === '') {
+            return $content;
+        }
+
+        $allowedTags = '<p><br><strong><b><em><i><u><h2><h3><ul><ol><li><blockquote><a>';
+        $content = strip_tags($content, $allowedTags);
+
+        // Only preserve a safe href on links. All other attributes are removed.
+        $content = preg_replace_callback('/<a\\b([^>]*)>/i', function (array $matches): string {
+            $href = '';
+            if (preg_match('/\\bhref\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s>]+))/i', $matches[1], $hrefMatch)) {
+                $href = html_entity_decode($hrefMatch[1] ?: ($hrefMatch[2] ?: $hrefMatch[3]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            $isSafeHref = preg_match('/^(https?:|mailto:|\\/|#)/i', trim($href));
+            return $isSafeHref
+                ? '<a href="' . htmlspecialchars(trim($href), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">'
+                : '<a>';
+        }, $content);
+
+        // Formatting tags do not need attributes, so remove them all.
+        return preg_replace_callback('/<(\\/?)(p|br|strong|b|em|i|u|h2|h3|ul|ol|li|blockquote)(?:\\s[^>]*)?>/i', function (array $matches): string {
+            return '<' . $matches[1] . strtolower($matches[2]) . '>';
+        }, $content);
+    }
+
     public function createNews(Request $request)
     {
         $data = $request->validate([
@@ -528,8 +560,9 @@ class AdminController extends Controller
             'readTime' => 'required|string',
             'featured' => 'required|boolean',
             'emoji' => 'required|string',
-            'images' => 'nullable|array',
+            'images' => 'nullable|array|max:7',
         ]);
+        $data['content'] = $this->sanitizeNewsContent($data['content'] ?? null);
         $news = NewsItem::create($data);
         return response()->json(['success' => true, 'news' => $news]);
     }
@@ -546,8 +579,9 @@ class AdminController extends Controller
             'readTime' => 'required|string',
             'featured' => 'required|boolean',
             'emoji' => 'required|string',
-            'images' => 'nullable|array',
+            'images' => 'nullable|array|max:7',
         ]);
+        $data['content'] = $this->sanitizeNewsContent($data['content'] ?? null);
         $news->update($data);
         return response()->json(['success' => true, 'news' => $news]);
     }

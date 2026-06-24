@@ -153,6 +153,17 @@ export default function Hero({ brandName, brandSubtext, brandLogo, heroSettings 
       <div className="hero__content container">
         {/* Logos */}
         <div className="hero__logos">
+          <a
+            href="https://olshco.lamparasystem.com/"
+            className="hero__logo-link"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Visit the OLSHCo website"
+          >
+            <div className="hero__logo-ring">
+              <img src="/images/olshco.png" alt="OLSHCo logo" className="hero__logo-img" />
+            </div>
+          </a>
           <div className="hero__logo-ring">
             {brandLogo && !imgError ? (
               <img src={brandLogo} alt="Logo" className="hero__logo-img"
@@ -166,6 +177,9 @@ export default function Hero({ brandName, brandSubtext, brandLogo, heroSettings 
         </div>
 
         <div className="hero__badge">
+          <span className="hero__badge-dot hero__badge-dot--maroon" />
+          OLSHCo — Our Lady of the Sacred Heart College of Guimba, Inc.
+          <span className="hero__badge-separator" aria-hidden="true" />
           <span className="hero__badge-dot" />
           {brandSubtext} — {brandName ? brandName.split('-')[1] || 'OLSHCo' : 'OLSHCo'} Chapter
         </div>

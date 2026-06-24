@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import RichTextEditor from './RichTextEditor';
 import './AdminDashboard.css';
 
 const renderTeamIcon = (iconName) => {
@@ -3118,7 +3119,7 @@ export default function AdminDashboard() {
       {/* CRUD Edit Dialog Modal */}
       {editItem && (
         <div className="admin-modal-overlay">
-          <div className="admin-modal-box">
+          <div className={`admin-modal-box ${modalType === 'news' ? 'admin-modal-box--news' : ''}`}>
             <h3>{isNew ? 'Create New' : 'Edit'} {modalType.toUpperCase()}</h3>
             <form onSubmit={handleSaveCRUD} className="admin-form">
               {error && <div className="admin-error-box">{error}</div>}
@@ -3553,7 +3554,7 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                       ))}
-                      {(editItem.images || []).length < 5 && (
+                      {(editItem.images || []).length < 7 && (
                         <div style={{
                           width: '80px',
                           height: '80px',
@@ -3605,12 +3606,15 @@ export default function AdminDashboard() {
                       )}
                     </div>
                     <p style={{ fontSize: '0.72rem', color: 'var(--admin-text-light)', margin: 0 }}>
-                      PNG, JPG, WebP up to 5MB. Optional.
+                      PNG, JPG, WebP up to 5MB each. Maximum 7 images.
                     </p>
                   </div>
                   <div className="form-group">
                     <label>Full Article Content</label>
-                    <textarea rows={8} value={editItem.content || ''} onChange={e => setEditItem({...editItem, content: e.target.value})} required placeholder="Write the full article body here..." />
+                    <RichTextEditor
+                      value={editItem.content || ''}
+                      onChange={content => setEditItem(prev => ({ ...prev, content }))}
+                    />
                   </div>
                   <div className="form-row">
                     <div className="form-group">

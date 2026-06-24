@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import CustomCursor from './CustomCursor';
 import './ArticlePage.css';
@@ -20,12 +21,16 @@ const slugify = (text) => {
     .replace(/-+$/, '');             // Trim hyphen from end
 };
 
+const hasRichTextMarkup = (content) => /<\/?[a-z][\s\S]*>/i.test(content || '');
+
 export default function ArticlePage({ articleId }) {
   const [about, setAbout] = useState({});
   const [article, setArticle] = useState(null);
   const [recentNews, setRecentNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -56,6 +61,30 @@ export default function ArticlePage({ articleId }) {
         window.scrollTo(0, 0);
       });
   }, [articleId]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [articleId]);
+
+  useEffect(() => {
+    const imageCount = article?.images?.length || 0;
+    if (imageCount < 2) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveImageIndex(index => (index + 1) % imageCount);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [article?.images?.length]);
+
+  useEffect(() => {
+    const closeOnEscape = event => {
+      if (event.key === 'Escape') setLightboxImage(null);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, []);
 
   if (loading) {
     return (
@@ -163,30 +192,60 @@ export default function ArticlePage({ articleId }) {
         <div className="article-page__layout">
           {/* Main Body Card */}
           <article className="article-page__main-card">
-            <p className="article-page__excerpt">{article.excerpt}</p>
-            <div className="article-page__divider" />
             {article.images && article.images.length > 0 && (
-              <div className="article-page__gallery">
-                {article.images.length === 1 ? (
-                  <div className="article-page__single-image">
-                    <img src={article.images[0]} alt="Article Header Cover" />
-                  </div>
-                ) : (
-                  <div className="article-page__grid-gallery">
-                    {article.images.map((imgUrl, idx) => (
-                      <div key={idx} className="article-page__gallery-item">
-                        <a href={imgUrl} target="_blank" rel="noreferrer">
-                          <img src={imgUrl} alt={`Article attachment ${idx + 1}`} />
-                        </a>
-                      </div>
+              <div className="article-page__gallery article-page__slideshow">
+                <div className="article-page__slide">
+                  <img
+                    src={article.images[activeImageIndex]}
+                    alt={`Article image ${activeImageIndex + 1} of ${article.images.length}`}
+                    onClick={() => setLightboxImage(article.images[activeImageIndex])}
+                  />
+                  {article.images.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="article-page__slide-control article-page__slide-control--previous"
+                        onClick={() => setActiveImageIndex(index => (index - 1 + article.images.length) % article.images.length)}
+                        aria-label="Previous image"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="article-page__slide-control article-page__slide-control--next"
+                        onClick={() => setActiveImageIndex(index => (index + 1) % article.images.length)}
+                        aria-label="Next image"
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
+                </div>
+                {article.images.length > 1 && (
+                  <div className="article-page__slide-indicators" aria-label="Image slideshow controls">
+                    {article.images.map((_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        className={`article-page__slide-indicator ${index === activeImageIndex ? 'article-page__slide-indicator--active' : ''}`}
+                        onClick={() => setActiveImageIndex(index)}
+                        aria-label={`Show image ${index + 1}`}
+                        aria-current={index === activeImageIndex ? 'true' : undefined}
+                      />
                     ))}
                   </div>
                 )}
               </div>
             )}
+            <p className="article-page__excerpt">{article.excerpt}</p>
+            <div className="article-page__divider" />
             <div className="article-page__body-text">
               {article.content ? (
-                article.content
+                hasRichTextMarkup(article.content) ? (
+                  <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                ) : (
+                  article.content
+                )
               ) : (
                 <p style={{ fontStyle: 'italic', color: 'var(--gray-400)' }}>
                   This article has no content body written yet. Check back soon for updates!
@@ -261,6 +320,28 @@ export default function ArticlePage({ articleId }) {
       )}
 
       {/* Footer */}
+      {lightboxImage && ReactDOM.createPortal(
+        <div
+          className="article-page__lightbox-backdrop"
+          onClick={() => setLightboxImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image preview"
+        >
+          <div className="article-page__lightbox-inner" onClick={event => event.stopPropagation()}>
+            <button
+              type="button"
+              className="article-page__lightbox-close"
+              onClick={() => setLightboxImage(null)}
+              aria-label="Close image preview"
+            >
+              ×
+            </button>
+            <img src={lightboxImage} alt="Expanded article image" className="article-page__lightbox-image" />
+          </div>
+        </div>,
+        document.body
+      )}
       <footer className="article-page__footer">
         <p>© {new Date().getFullYear()} {about.brand_name || 'JPCS-OLSHCo'}. All rights reserved.</p>
       </footer>

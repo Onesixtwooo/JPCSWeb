@@ -50,7 +50,7 @@ export default function NewsPage() {
   const categories = ['All', ...new Set(newsList.map(n => n.category).filter(Boolean))];
   const filtered = activeFilter === 'All' ? newsList : newsList.filter(n => n.category === activeFilter);
   const featured = filtered.find(n => n.featured) || filtered[0];
-  const rest = featured ? filtered.filter(n => n.id !== featured.id) : [];
+  const rest = filtered;
 
   return (
     <div className="newspage">
@@ -115,7 +115,7 @@ export default function NewsPage() {
         ) : (
           <>
             {/* Featured Article */}
-            {featured && (
+            {false && featured && (
               <article className="newspage__featured">
                 <div className="newspage__featured-badge">{featured.emoji || '📣'} Featured</div>
                 <div className="newspage__featured-meta">
@@ -145,6 +145,9 @@ export default function NewsPage() {
                 {rest.map(n => (
                   <a href={`/news/${slugify(n.title)}`} key={n.id} className="newspage__card-link">
                     <article className="newspage__card">
+                      <div className="newspage__card-image" aria-hidden="true">
+                        {n.images?.[0] ? <img src={n.images[0]} alt="" /> : <span>{n.emoji || 'News'}</span>}
+                      </div>
                       <div className="newspage__card-emoji">{n.emoji || '📰'}</div>
                       <div className="newspage__card-body">
                         <div className="newspage__card-meta">
@@ -153,6 +156,7 @@ export default function NewsPage() {
                         </div>
                         <h3 className="newspage__card-title">{n.title}</h3>
                         <p className="newspage__card-excerpt">{n.excerpt}</p>
+                        <span className="newspage__card-more">Read More</span>
                         {n.readTime && <span className="newspage__card-read">{n.readTime}</span>}
                       </div>
                     </article>
