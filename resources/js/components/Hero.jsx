@@ -176,12 +176,13 @@ export default function Hero({ brandName, brandSubtext, brandLogo, heroSettings 
           </div>
         </div>
 
-        <div className="hero__badge">
-          <span className="hero__badge-dot hero__badge-dot--maroon" />
-          OLSHCo — Our Lady of the Sacred Heart College of Guimba, Inc.
-          <span className="hero__badge-separator" aria-hidden="true" />
-          <span className="hero__badge-dot" />
+        <div className="hero__badge hero__badge--stacked">
+          <span className="hero__badge-row">
+          Our Lady of the Sacred Heart College of Guimba, Inc.
+          </span>
+          <span className="hero__badge-row">
           {brandSubtext} — {brandName ? brandName.split('-')[1] || 'OLSHCo' : 'OLSHCo'} Chapter
+          </span>
         </div>
 
         <h1 className={`hero__title ${isMorphing ? 'hero__title--morphing' : ''}`}>

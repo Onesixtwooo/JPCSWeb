@@ -27,8 +27,38 @@ Route::get('/news', function () {
     return view('welcome');
 });
 
-Route::get('/news/{id}', function () {
-    return view('welcome');
+Route::get('/news/{id}', function ($id) {
+    $article = null;
+
+    if (is_numeric($id)) {
+        $article = \App\Models\NewsItem::find($id);
+    } else {
+        $slugify = function (string $title): string {
+            $title = mb_strtolower($title, 'UTF-8');
+            return trim(preg_replace('/[^a-z0-9]+/', '-', $title), '-');
+        };
+
+        $article = \App\Models\NewsItem::all()->first(
+            fn (\App\Models\NewsItem $item) => $slugify($item->title) === $id
+        );
+    }
+
+    if (!$article) {
+        return view('welcome');
+    }
+
+    $images = $article->images ?: [];
+    $image = $images[0] ?? \App\Models\Setting::where('key', 'brand_logo')->value('value');
+
+    return view('welcome', [
+        'shareMeta' => [
+            'title' => $article->title,
+            'description' => $article->excerpt,
+            'image' => $image ? url($image) : null,
+            'url' => url()->current(),
+            'type' => 'article',
+        ],
+    ]);
 });
 
 Route::get('/career', function () {
