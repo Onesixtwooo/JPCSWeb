@@ -2,6 +2,69 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
+use Carbon\Carbon;
+use Spatie\Sitemap\Sitemap;
+use Spatie\Sitemap\Tags\Url;
+
+$newsSlug = function (string $title): string {
+    $title = mb_strtolower($title, 'UTF-8');
+    return trim(preg_replace('/[^a-z0-9]+/', '-', $title), '-');
+};
+
+Route::get('/sitemap.xml', function () use ($newsSlug) {
+    $sitemap = Sitemap::create();
+    $excludedPrefixes = ['admin', 'login', 'api'];
+
+    $addPublicUrl = function (string $path, string $frequency, float $priority, ?Carbon $lastModified = null) use ($sitemap, $excludedPrefixes) {
+        $path = '/' . ltrim($path, '/');
+        $firstSegment = explode('/', trim($path, '/'))[0] ?? '';
+
+        if (in_array($firstSegment, $excludedPrefixes, true)) {
+            return;
+        }
+
+        $sitemap->add(
+            Url::create(url($path))
+                ->setLastModificationDate($lastModified ?? now())
+                ->setChangeFrequency($frequency)
+                ->setPriority($priority)
+        );
+    };
+
+    $staticPages = [
+        '/' => [Url::CHANGE_FREQUENCY_WEEKLY, 1.0],
+        '/about' => [Url::CHANGE_FREQUENCY_MONTHLY, 0.8],
+        '/news' => [Url::CHANGE_FREQUENCY_WEEKLY, 0.9],
+        '/career' => [Url::CHANGE_FREQUENCY_MONTHLY, 0.8],
+        '/resources' => [Url::CHANGE_FREQUENCY_MONTHLY, 0.8],
+    ];
+
+    foreach ($staticPages as $path => [$frequency, $priority]) {
+        $addPublicUrl($path, $frequency, $priority);
+    }
+
+    \App\Models\NewsItem::query()
+        ->orderByDesc('id')
+        ->get()
+        ->each(function (\App\Models\NewsItem $newsItem) use ($addPublicUrl, $newsSlug) {
+            try {
+                $lastModified = $newsItem->date ? Carbon::parse($newsItem->date) : now();
+            } catch (\Exception) {
+                $lastModified = now();
+            }
+
+            $slug = $newsSlug($newsItem->title);
+
+            $addPublicUrl(
+                '/news/' . ($slug ?: $newsItem->id),
+                Url::CHANGE_FREQUENCY_MONTHLY,
+                0.7,
+                $lastModified
+            );
+        });
+
+    return $sitemap;
+});
 
 // Page rendering routes
 Route::get('/', function () {
@@ -27,19 +90,14 @@ Route::get('/news', function () {
     return view('welcome');
 });
 
-Route::get('/news/{id}', function ($id) {
+Route::get('/news/{id}', function ($id) use ($newsSlug) {
     $article = null;
 
     if (is_numeric($id)) {
         $article = \App\Models\NewsItem::find($id);
     } else {
-        $slugify = function (string $title): string {
-            $title = mb_strtolower($title, 'UTF-8');
-            return trim(preg_replace('/[^a-z0-9]+/', '-', $title), '-');
-        };
-
         $article = \App\Models\NewsItem::all()->first(
-            fn (\App\Models\NewsItem $item) => $slugify($item->title) === $id
+            fn (\App\Models\NewsItem $item) => $newsSlug($item->title) === $id
         );
     }
 
