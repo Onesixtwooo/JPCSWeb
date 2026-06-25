@@ -11,7 +11,12 @@ $newsSlug = function (string $title): string {
     return trim(preg_replace('/[^a-z0-9]+/', '-', $title), '-');
 };
 
-Route::get('/sitemap.xml', function () use ($newsSlug) {
+$alumniSlug = function (string $name): string {
+    $name = mb_strtolower($name, 'UTF-8');
+    return trim(preg_replace('/[^a-z0-9]+/', '-', $name), '-');
+};
+
+Route::get('/sitemap.xml', function () use ($newsSlug, $alumniSlug) {
     $sitemap = Sitemap::create();
     $excludedPrefixes = ['admin', 'login', 'api'];
 
@@ -60,6 +65,21 @@ Route::get('/sitemap.xml', function () use ($newsSlug) {
                 Url::CHANGE_FREQUENCY_MONTHLY,
                 0.7,
                 $lastModified
+            );
+        });
+
+    \App\Models\AlumniTestimonial::query()
+        ->orderBy('order')
+        ->orderBy('name')
+        ->get()
+        ->each(function (\App\Models\AlumniTestimonial $alumnus) use ($addPublicUrl, $alumniSlug) {
+            $slug = $alumniSlug($alumnus->name);
+
+            $addPublicUrl(
+                '/career/alumni/' . ($slug ?: $alumnus->id),
+                Url::CHANGE_FREQUENCY_MONTHLY,
+                0.6,
+                $alumnus->updated_at ?? now()
             );
         });
 
@@ -121,6 +141,32 @@ Route::get('/news/{id}', function ($id) use ($newsSlug) {
 
 Route::get('/career', function () {
     return view('welcome');
+});
+
+Route::get('/career/alumni/{id}', function ($id) use ($alumniSlug) {
+    if (is_numeric($id)) {
+        $alumnus = \App\Models\AlumniTestimonial::find($id);
+    } else {
+        $alumnus = \App\Models\AlumniTestimonial::all()->first(
+            fn (\App\Models\AlumniTestimonial $item) => $alumniSlug($item->name) === $id
+        );
+    }
+
+    if (!$alumnus) {
+        return view('welcome');
+    }
+
+    $image = $alumnus->image ?: \App\Models\Setting::where('key', 'brand_logo')->value('value');
+
+    return view('welcome', [
+        'shareMeta' => [
+            'title' => "{$alumnus->name}'s Alumni Story - JPCS-OLSHCo",
+            'description' => $alumnus->quote,
+            'image' => $image ? url($image) : null,
+            'url' => url('/career/alumni/' . ($alumniSlug($alumnus->name) ?: $alumnus->id)),
+            'type' => 'article',
+        ],
+    ]);
 });
 
 Route::get('/resources', function () {

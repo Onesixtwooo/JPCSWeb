@@ -15,6 +15,10 @@ const OUTLOOK_COLORS = {
   'Growing':          { bg: '#fef3c7', color: '#92400e' },
 };
 
+const alumniSlug = (name) => encodeURIComponent(
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+);
+
 export default function CareerPage() {
   const [about, setAbout] = useState({});
   const [careers, setCareers] = useState([]);
@@ -74,10 +78,18 @@ export default function CareerPage() {
     if (loading || alumni.length === 0) return;
     
     const hash = window.location.hash;
-    if (hash && hash.startsWith('#alumni-')) {
-      const slug = hash.replace('#alumni-', '');
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const alumniPathSlug = pathParts[0] === 'career' && pathParts[1] === 'alumni'
+      ? pathParts[2]
+      : null;
+    const hashSlug = hash && hash.startsWith('#alumni-')
+      ? hash.replace('#alumni-', '')
+      : null;
+    const slug = alumniPathSlug || hashSlug;
+
+    if (slug) {
       const index = alumni.findIndex(a => 
-        encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-')) === slug
+        alumniSlug(a.name) === slug
       );
       if (index !== -1) {
         const page = Math.floor(index / alumniPerPage) + 1;
@@ -103,8 +115,8 @@ export default function CareerPage() {
   }, [activeFilter]);
 
   const handleShare = (alumnus) => {
-    const slug = encodeURIComponent(alumnus.name.toLowerCase().replace(/\s+/g, '-'));
-    const shareUrl = `${window.location.origin}${window.location.pathname}#alumni-${slug}`;
+    const slug = alumniSlug(alumnus.name);
+    const shareUrl = `${window.location.origin}/career/alumni/${slug}`;
     
     const shareData = {
       title: `${alumnus.name}'s Success Story - JPCS Career Board`,
@@ -147,8 +159,8 @@ export default function CareerPage() {
   };
 
   const handleFbShare = (alumnus) => {
-    const slug = encodeURIComponent(alumnus.name.toLowerCase().replace(/\s+/g, '-'));
-    const shareUrl = `${window.location.origin}${window.location.pathname}#alumni-${slug}`;
+    const slug = alumniSlug(alumnus.name);
+    const shareUrl = `${window.location.origin}/career/alumni/${slug}`;
     const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     window.open(fbShareUrl, '_blank', 'noopener,noreferrer,width=600,height=400');
   };
@@ -386,7 +398,7 @@ export default function CareerPage() {
               if (a.image) {
                 return (
                   <div 
-                    id={`alumni-card-${encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-'))}`}
+                    id={`alumni-card-${alumniSlug(a.name)}`}
                     key={a.name} 
                     className="alumni-card alumni-card--photo" 
                     style={{ '--alumni-color': a.color }}
@@ -452,7 +464,7 @@ export default function CareerPage() {
 
               return (
                 <div 
-                  id={`alumni-card-${encodeURIComponent(a.name.toLowerCase().replace(/\s+/g, '-'))}`}
+                  id={`alumni-card-${alumniSlug(a.name)}`}
                   key={a.name} 
                   className="alumni-card" 
                   style={{ '--alumni-color': a.color }}

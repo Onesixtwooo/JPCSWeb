@@ -18,7 +18,7 @@ if (el) {
   const isAbout = path === '/about';
   const isNews = path === '/news';
   const isNewsDetail = path.startsWith('/news/') && path.split('/')[2];
-  const isCareer = path === '/career';
+  const isCareer = path === '/career' || path.startsWith('/career/alumni/');
   const isResources = path === '/resources';
 
   if (isLogin) {
